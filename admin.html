@@ -267,10 +267,19 @@ body[data-page="admin"]{ background:#fbf9f4; }
 <span class="material-symbols-outlined text-on-surface-variant text-[20px]">search</span>
 <input class="bg-transparent border-none focus:ring-0 text-label-sm w-40 ml-2" placeholder="Search orders..." type="text"/>
 </div>
-<button onclick="toast('3 new workshop updates', 'notifications')" class="relative text-on-surface-variant hover:text-primary transition-colors" aria-label="Notifications">
+<div class="relative">
+<button onclick="toggleNotifPanel()" class="relative text-on-surface-variant hover:text-primary transition-colors" aria-label="Notifications">
 <span class="material-symbols-outlined">notifications</span>
-<span class="absolute -top-1 -right-1 w-2.5 h-2.5 bg-error rounded-full border-2 border-surface"></span>
+<span id="notif-badge" class="hidden absolute -top-1.5 -right-1.5 bg-error text-white text-[10px] w-4 h-4 rounded-full items-center justify-center font-bold">0</span>
 </button>
+<div id="notif-panel" class="hidden absolute right-0 top-full mt-3 w-80 max-h-[70vh] overflow-y-auto bg-surface border border-outline-variant/30 rounded-lg shadow-xl z-40">
+<div class="px-4 py-3 border-b border-outline-variant/20 flex justify-between items-center">
+<span class="font-label-md text-label-md uppercase tracking-widest text-on-surface-variant">Pending Orders</span>
+<button onclick="requestOrderAlertPermission()" id="notif-enable-btn" class="hidden font-label-sm text-label-sm text-primary hover:underline">Enable Alerts</button>
+</div>
+<div id="notif-list"></div>
+</div>
+</div>
 </div>
 </header>
 
@@ -1192,6 +1201,99 @@ async function updateCustomerOrderStatusUI(id, status){
 }
 window.updateCustomerOrderStatusUI = updateCustomerOrderStatusUI;
 
+/* ---------- Order notifications (bell + dropdown) ---------- */
+let NOTIF_SEEN_IDS = null;
+
+function notifOrderRowHTML(o){
+  const utr = (o.payment && o.payment.utr) ? ('UTR: ' + esc(o.payment.utr)) : 'No UTR on file';
+  return '<div class="px-4 py-3 border-b border-outline-variant/10 last:border-0">'
+    + '<div class="flex justify-between items-start gap-2 mb-1">'
+    + '<span class="font-label-md text-label-md text-on-surface">' + esc(o.orderNumber) + '</span>'
+    + '<span class="font-label-md text-label-md text-primary">' + mistiData.formatINR(o.total) + '</span>'
+    + '</div>'
+    + '<p class="font-label-sm text-label-sm ' + ((o.payment && o.payment.utr) ? 'text-on-surface-variant' : 'text-error') + ' mb-2">' + utr + '</p>'
+    + '<div class="flex gap-2">'
+    + '<button onclick="acceptOrder(\'' + jsq(o.id) + '\')" class="flex-1 bg-primary text-on-primary font-label-sm text-label-sm uppercase tracking-wide py-1.5 rounded hover:opacity-90">Accept</button>'
+    + '<button onclick="declineOrder(\'' + jsq(o.id) + '\')" class="flex-1 border border-error text-error font-label-sm text-label-sm uppercase tracking-wide py-1.5 rounded hover:bg-error hover:text-white transition-colors">Decline</button>'
+    + '</div></div>';
+}
+function renderNotifPanel(){
+  const pending = LIVE_CUSTOMER_ORDERS.filter(o=> o.status === 'Pending');
+  const badge = qs('#notif-badge');
+  if(pending.length){
+    badge.textContent = pending.length > 99 ? '99+' : String(pending.length);
+    badge.classList.remove('hidden');
+    badge.classList.add('flex');
+  } else {
+    badge.classList.add('hidden');
+    badge.classList.remove('flex');
+  }
+  const list = qs('#notif-list');
+  list.innerHTML = pending.length
+    ? pending.map(notifOrderRowHTML).join('')
+    : '<p class="px-4 py-6 text-center font-body-md text-body-md text-on-surface-variant">No pending orders</p>';
+}
+function toggleNotifPanel(){
+  qs('#notif-panel').classList.toggle('hidden');
+}
+document.addEventListener('click', function(e){
+  const panel = qs('#notif-panel');
+  const wrap = panel && panel.parentElement;
+  if(wrap && !wrap.contains(e.target)) panel.classList.add('hidden');
+});
+async function acceptOrder(id){
+  await updateCustomerOrderStatusUI(id, 'Processing');
+  renderNotifPanel();
+}
+window.acceptOrder = acceptOrder;
+async function declineOrder(id){
+  if(!confirm('Decline this order? This marks it Cancelled.')) return;
+  await updateCustomerOrderStatusUI(id, 'Cancelled');
+  renderNotifPanel();
+}
+window.declineOrder = declineOrder;
+window.toggleNotifPanel = toggleNotifPanel;
+
+/* ---------- Browser notification permission ---------- */
+function refreshNotifEnableBtn(){
+  const btn = qs('#notif-enable-btn');
+  if(!btn) return;
+  const supported = 'Notification' in window;
+  btn.classList.toggle('hidden', !supported || Notification.permission !== 'default');
+}
+function requestOrderAlertPermission(){
+  if(!('Notification' in window)) return;
+  Notification.requestPermission().then(refreshNotifEnableBtn);
+}
+window.requestOrderAlertPermission = requestOrderAlertPermission;
+
+function handleCustomerOrdersUpdate(orders){
+  if(NOTIF_SEEN_IDS){
+    orders.forEach(function(o){
+      if(o.status === 'Pending' && !NOTIF_SEEN_IDS.has(o.id)) notifyNewOrder(o);
+    });
+  }
+  NOTIF_SEEN_IDS = new Set(orders.map(function(o){ return o.id; }));
+  LIVE_CUSTOMER_ORDERS = orders;
+  renderCustomerOrdersTable();
+  renderNotifPanel();
+  updateDashboardStats();
+}
+window.handleCustomerOrdersUpdate = handleCustomerOrdersUpdate;
+
+function notifyNewOrder(o){
+  const utr = (o.payment && o.payment.utr) ? o.payment.utr : 'No UTR on file';
+  toast('New order ' + o.orderNumber + ' — ' + mistiData.formatINR(o.total) + ' — UTR ' + utr, 'notifications');
+  if('Notification' in window && Notification.permission === 'granted'){
+    try{
+      new Notification('New mistiCRAFT order — ' + mistiData.formatINR(o.total), {
+        body: o.orderNumber + '  ·  UTR ' + utr,
+        tag: 'mc-order-' + o.id
+      });
+    }catch(e){ console.error('mistiCRAFT notification error', e); }
+  }
+}
+
 /* ---------- Artisans ---------- */
 function artisanAdminCardHTML(a){
   const tags = (a.tags||[]).map(t=> '<span class="px-2 py-1 text-xs border border-outline font-label-sm text-outline uppercase tracking-widest">' + esc(t) + '</span>').join('');
@@ -1593,12 +1695,9 @@ async function initAdminData(){
     LIVE_FOUNDERS = founders;
     renderFoundersGrid();
   });
-  mistiData.orders.subscribeAll(function(orders){
-    LIVE_CUSTOMER_ORDERS = orders;
-    renderCustomerOrdersTable();
-    updateDashboardStats();
-  });
+  mistiData.orders.subscribeAll(handleCustomerOrdersUpdate);
   mistiData.subscribeSettings(function(s){ hydrateSettingsForm(s); });
+  refreshNotifEnableBtn();
 }
 
 /* ---------- Admin authentication gate ----------
