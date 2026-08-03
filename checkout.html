@@ -12,6 +12,7 @@
 <script src="misticraft-data.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/4.0.0/jspdf.umd.min.js"></script>
 <script src="invoice.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.4/build/qrcode.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin=""/>
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,400;0,500;0,600;0,700;1,400&amp;family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&amp;display=swap" rel="stylesheet"/>
@@ -169,9 +170,9 @@ details.acc[open] .acc-chevron{ transform:rotate(180deg); }
 
 
 
-#card-fields, #upi-fields{ overflow:hidden; max-height:220px; transition:max-height .4s var(--ease), opacity .3s ease; opacity:1; }
-#card-fields.collapsed, #upi-fields.collapsed{ max-height:0; opacity:0; }
 #order-confirmation.flex{ display:flex; }
+#upi-pay-modal.flex .modal-panel{ opacity:1; transform:scale(1); }
+#upi-pay-modal.flex .modal-backdrop{ opacity:1; }
 
 </style>
 </head>
@@ -231,25 +232,11 @@ details.acc[open] .acc-chevron{ transform:rotate(180deg); }
 </div>
 
 <div data-reveal>
-<h2 class="font-headline-md text-headline-md text-on-surface mb-6 flex items-center gap-2"><span class="material-symbols-outlined">credit_card</span> Payment Method</h2>
-<div class="space-y-4 border border-outline-variant/30 rounded-lg p-4 bg-surface">
-<label class="flex items-center gap-4 p-4 border border-outline-variant/50 rounded-lg cursor-pointer hover:bg-surface-container-low transition-colors">
-<input checked class="text-primary focus:ring-primary w-5 h-5 border-outline" name="payment" type="radio" value="card" onchange="setPaymentMethod('card')"/>
-<div class="flex-1"><span class="font-label-md text-label-md text-on-surface block">Credit / Debit Card</span><span class="font-body-md text-body-md text-on-surface-variant text-sm block">Visa, MasterCard, Amex</span></div>
-<span class="material-symbols-outlined text-outline">payments</span>
-</label>
-<div id="card-fields" class="pl-4 md:pl-14 pr-2 grid grid-cols-1 md:grid-cols-2 gap-x-6">
-<div class="field md:col-span-2"><input class="font-body-md text-body-md text-on-surface" placeholder=" " inputmode="numeric" maxlength="19" type="text" required/><label>Card Number</label></div>
-<div class="field"><input class="font-body-md text-body-md text-on-surface" placeholder=" " maxlength="5" type="text" required/><label>Expiry (MM/YY)</label></div>
-<div class="field"><input class="font-body-md text-body-md text-on-surface" placeholder=" " maxlength="4" inputmode="numeric" type="text" required/><label>CVV</label></div>
-</div>
-<label class="flex items-center gap-4 p-4 border border-outline-variant/50 rounded-lg cursor-pointer hover:bg-surface-container-low transition-colors">
-<input class="text-primary focus:ring-primary w-5 h-5 border-outline" name="payment" type="radio" value="upi" onchange="setPaymentMethod('upi')"/>
-<div class="flex-1"><span class="font-label-md text-label-md text-on-surface block">UPI</span><span class="font-body-md text-body-md text-on-surface-variant text-sm block">Google Pay, PhonePe, Paytm</span></div>
-<span class="material-symbols-outlined text-outline">qr_code_scanner</span>
-</label>
-<div id="upi-fields" class="collapsed pl-4 md:pl-14 pr-2">
-<div class="field"><input class="font-body-md text-body-md text-on-surface" placeholder=" " type="text"/><label>UPI ID (name@bank)</label></div>
+<h2 class="font-headline-md text-headline-md text-on-surface mb-6 flex items-center gap-2"><span class="material-symbols-outlined">qr_code_scanner</span> Payment Method</h2>
+<div class="border border-outline-variant/30 rounded-lg p-4 bg-surface">
+<div class="flex items-center gap-4 p-4 border border-primary/50 bg-primary/5 rounded-lg">
+<div class="flex-1"><span class="font-label-md text-label-md text-on-surface block">UPI</span><span class="font-body-md text-body-md text-on-surface-variant text-sm block">Google Pay, PhonePe, Paytm &amp; other UPI apps &mdash; pay the exact amount straight from your phone.</span></div>
+<span class="material-symbols-outlined text-primary">qr_code_scanner</span>
 </div>
 </div>
 </div>
@@ -271,7 +258,7 @@ details.acc[open] .acc-chevron{ transform:rotate(180deg); }
 <p class="font-label-sm text-label-sm text-on-surface-variant text-center -mt-4 mb-4">Inclusive of all taxes (GST)</p>
 <p id="checkout-error" class="hidden font-label-sm text-label-sm text-error text-center mb-4"></p>
 <button id="checkout-submit-btn" onclick="submitOrder()" type="button" class="btn w-full bg-secondary text-primary-container font-label-md text-label-md uppercase tracking-wider py-4 hover:bg-on-secondary-fixed-variant transition-colors flex items-center justify-center gap-2">
-Complete Secure Order <span class="material-symbols-outlined text-lg">arrow_forward</span>
+Pay with UPI <span class="material-symbols-outlined text-lg">arrow_forward</span>
 </button>
 <p class="font-label-sm text-label-sm text-center text-on-surface-variant mt-4 flex justify-center items-center gap-1 opacity-70"><span class="material-symbols-outlined text-[16px]">verified_user</span> Secure SSL Encrypted Checkout</p>
 </div>
@@ -294,6 +281,24 @@ Complete Secure Order <span class="material-symbols-outlined text-lg">arrow_forw
 </div>
 </div>
 </main>
+
+<!-- UPI pay popup -->
+<div class="fixed inset-0 z-[70] hidden items-center justify-center p-4" id="upi-pay-modal">
+<div class="modal-backdrop absolute inset-0 bg-black/60 backdrop-blur-md opacity-0" onclick="closeUpiModal()"></div>
+<div class="modal-panel opacity-0 scale-95 bg-surface w-full max-w-sm relative z-10 p-8 text-center">
+<button class="absolute top-4 right-4 hover:rotate-90 transition-transform duration-300" onclick="closeUpiModal()" aria-label="Close"><span class="material-symbols-outlined">close</span></button>
+<span class="material-symbols-outlined text-primary text-[32px] mb-2">qr_code_scanner</span>
+<h3 class="font-headline-md text-headline-md text-on-surface mb-1">Pay via UPI</h3>
+<p id="upi-modal-amount" class="font-display-lg-mobile text-display-lg-mobile text-primary mb-4">₹0</p>
+<div class="flex justify-center mb-4">
+<canvas id="upi-qr-canvas"></canvas>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant text-sm mb-6">Scan with any UPI app, or tap below to open your UPI app directly &mdash; the amount is filled in automatically.</p>
+<a id="upi-pay-link" href="#" class="btn w-full bg-primary text-on-primary font-label-md text-label-md uppercase tracking-widest py-3.5 mb-4 flex items-center justify-center gap-2"><span class="material-symbols-outlined text-lg">smartphone</span> Pay in UPI App</a>
+<p class="font-label-sm text-label-sm text-on-surface-variant mb-6">Reference: <span id="upi-modal-ref" class="font-bold text-on-surface"></span></p>
+<button onclick="confirmUpiPayment()" id="upi-confirm-btn" class="btn w-full border border-primary text-primary font-label-md text-label-md uppercase tracking-widest py-3.5 hover:bg-primary hover:text-white transition-colors">I&rsquo;ve Completed the Payment</button>
+</div>
+</div>
 
 <footer class="border-t border-outline-variant/20 py-8 px-container-margin text-center">
 <p class="font-label-sm text-label-sm text-on-surface-variant/60">&copy; <span data-year></span> mistiCRAFT Udaipur. Handcrafted with slow-fashion values.</p>
@@ -454,13 +459,6 @@ if(params.get('q') && typeof applySearchQuery === 'function'){
 }
 
 
-function setPaymentMethod(method){
-  qs('#card-fields').classList.toggle('collapsed', method !== 'card');
-  qs('#upi-fields').classList.toggle('collapsed', method !== 'upi');
-}
-window.setPaymentMethod = setPaymentMethod;
-setPaymentMethod('card');
-
 /* ---------- Live order summary, sourced from the real cart ---------- */
 let SHIPPING_FEE = 99;
 let CHECKOUT_UID = null;
@@ -521,11 +519,47 @@ mistiData.authReady().then(function(user){
   prefillCheckout(user.id);
 });
 let LATEST_SETTINGS = {};
+let PENDING_UPI_ORDER = null;
 mistiData.subscribeSettings(function(s){
   LATEST_SETTINGS = s || {};
   SHIPPING_FEE = (s && s.shipping_fee != null) ? Number(s.shipping_fee) : 99;
   renderCheckoutSummary(CHECKOUT_ITEMS);
 });
+
+/* ---------- UPI pay popup ---------- */
+function buildUpiUri(amount, ref){
+  const pa = (LATEST_SETTINGS.upi_id || '').trim();
+  const pn = (LATEST_SETTINGS.upi_payee_name || 'mistiCRAFT').trim();
+  return 'upi://pay?pa=' + encodeURIComponent(pa)
+    + '&pn=' + encodeURIComponent(pn)
+    + '&am=' + encodeURIComponent(amount.toFixed(2))
+    + '&cu=INR'
+    + '&tn=' + encodeURIComponent('mistiCRAFT Order ' + ref)
+    + '&tr=' + encodeURIComponent(ref);
+}
+
+function openUpiModal(amount, ref){
+  qs('#upi-modal-amount').textContent = mistiData.formatINR(amount);
+  qs('#upi-modal-ref').textContent = ref;
+  const uri = buildUpiUri(amount, ref);
+  qs('#upi-pay-link').href = uri;
+  if(window.QRCode){
+    QRCode.toCanvas(qs('#upi-qr-canvas'), uri, {width:220, margin:1}, function(err){
+      if(err) console.error('mistiCRAFT UPI QR render error', err);
+    });
+  }
+  const modal = qs('#upi-pay-modal');
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+  document.body.style.overflow = 'hidden';
+}
+function closeUpiModal(){
+  const modal = qs('#upi-pay-modal');
+  modal.classList.remove('flex');
+  modal.classList.add('hidden');
+  document.body.style.overflow = '';
+}
+window.closeUpiModal = closeUpiModal;
 
 async function submitOrder(){
   const form = qs('#checkout-form');
@@ -545,13 +579,12 @@ async function submitOrder(){
     errorEl.classList.remove('hidden');
     return;
   }
-  const btn = qs('#checkout-submit-btn');
-  btn.setAttribute('disabled','disabled');
-  btn.classList.add('opacity-60');
-  const originalLabel = btn.innerHTML;
-  btn.innerHTML = 'Placing your order&hellip;';
+  if(!(LATEST_SETTINGS.upi_id || '').trim()){
+    errorEl.textContent = 'UPI payments aren’t set up yet — please contact the store.';
+    errorEl.classList.remove('hidden');
+    return;
+  }
 
-  const paymentMethod = (qs('input[name="payment"]:checked') || {}).value || 'card';
   const subtotal = CHECKOUT_ITEMS.reduce((s,i)=> s + i.price * i.qty, 0);
   const shipping = SHIPPING_FEE;
   const address = {
@@ -563,22 +596,40 @@ async function submitOrder(){
     country: qs('#co-country').value.trim() || 'India'
   };
   const contact = { email: qs('#co-email').value.trim(), phone: qs('#co-phone').value.trim() };
+  const ref = 'MC' + Date.now().toString(36).toUpperCase();
+
+  PENDING_UPI_ORDER = { subtotal: subtotal, shipping: shipping, address: address, contact: contact, ref: ref };
+  openUpiModal(subtotal + shipping, ref);
+}
+window.submitOrder = submitOrder;
+
+async function confirmUpiPayment(){
+  if(!PENDING_UPI_ORDER) return;
+  const btn = qs('#upi-confirm-btn');
+  btn.setAttribute('disabled','disabled');
+  btn.classList.add('opacity-60');
+  const originalLabel = btn.innerHTML;
+  btn.innerHTML = 'Confirming&hellip;';
+  const errorEl = qs('#checkout-error');
+  const pending = PENDING_UPI_ORDER;
 
   try{
     const order = await mistiData.orders.create({
       uid: CHECKOUT_UID,
       items: CHECKOUT_ITEMS,
-      subtotal: subtotal,
-      shipping: shipping,
-      total: subtotal + shipping,
-      contact: contact,
-      address: address,
-      payment: { method: paymentMethod }
+      subtotal: pending.subtotal,
+      shipping: pending.shipping,
+      total: pending.subtotal + pending.shipping,
+      contact: pending.contact,
+      address: pending.address,
+      payment: { method: 'upi', ref: pending.ref }
     });
     await mistiData.orders.decrementStock(CHECKOUT_ITEMS);
     await mistiData.cart.clear(CHECKOUT_UID);
-    await mistiData.saveProfile(CHECKOUT_UID, { phone: contact.phone, address: address });
+    await mistiData.saveProfile(CHECKOUT_UID, { phone: pending.contact.phone, address: pending.address });
 
+    PENDING_UPI_ORDER = null;
+    closeUpiModal();
     qs('#order-number').textContent = order.orderNumber;
     const eta = new Date(order.createdAt + 7 * 24 * 60 * 60 * 1000);
     qs('#order-eta').textContent = eta.toLocaleDateString('en-IN', {month:'short', day:'numeric', year:'numeric'});
@@ -590,14 +641,16 @@ async function submitOrder(){
     conf.scrollIntoView({behavior:'smooth', block:'start'});
   } catch(e){
     console.error('mistiCRAFT order submit error', e);
+    closeUpiModal();
     errorEl.textContent = 'Something went wrong placing your order. Please try again.';
     errorEl.classList.remove('hidden');
+  } finally {
     btn.removeAttribute('disabled');
     btn.classList.remove('opacity-60');
     btn.innerHTML = originalLabel;
   }
 }
-window.submitOrder = submitOrder;
+window.confirmUpiPayment = confirmUpiPayment;
 
 let LAST_ORDER = null;
 function downloadInvoice(){

@@ -242,6 +242,12 @@ for delete using (bucket_id = 'founder-images' and is_admin());
 alter table customer_orders add column if not exists transporter text;
 alter table customer_orders add column if not exists tracking_id text;
 
+-- ---------- UPI payment details (store owner's own VPA) ----------
+-- Checkout is UPI-only: the merchant's UPI ID/payee name live in
+-- settings and are turned into a upi://pay deep link + QR at checkout.
+alter table settings add column if not exists upi_id text;
+alter table settings add column if not exists upi_payee_name text;
+
 -- ---------- Store settings (single row) ----------
 create table if not exists settings (
   id int primary key default 1,

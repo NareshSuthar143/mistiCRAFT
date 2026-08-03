@@ -290,10 +290,10 @@
     try {
       var res = await db().from('settings').select('*').eq('id', 1).maybeSingle();
       if (res.error) throw res.error;
-      return res.data || { shipping_fee: 99, store_email: '', store_phone: '', default_transporter: '' };
+      return res.data || { shipping_fee: 99, store_email: '', store_phone: '', default_transporter: '', upi_id: '', upi_payee_name: '' };
     } catch (e) {
       console.error('mistiCRAFT getSettings error', e);
-      return { shipping_fee: 99, store_email: '', store_phone: '', default_transporter: '' };
+      return { shipping_fee: 99, store_email: '', store_phone: '', default_transporter: '', upi_id: '', upi_payee_name: '' };
     }
   }
   function subscribeSettings(cb) {

@@ -500,6 +500,8 @@ body[data-page="admin"]{ background:#fbf9f4; }
 <div class="field filled"><input id="set-store-email" type="email" placeholder=" "/><label>Store Contact Email</label></div>
 <div class="field filled"><input id="set-store-phone" type="tel" placeholder=" "/><label>Store Contact Phone</label></div>
 <div class="field filled"><input id="set-default-transporter" type="text" placeholder=" "/><label>Default Transporter Name</label></div>
+<div class="field filled"><input id="set-upi-id" type="text" placeholder=" "/><label>UPI ID (VPA) — e.g. yourshop@okhdfcbank</label></div>
+<div class="field filled"><input id="set-upi-payee-name" type="text" placeholder=" "/><label>Payee Name (shown to customers)</label></div>
 <p id="settings-save-status" class="hidden font-label-sm text-label-sm text-primary mt-3"></p>
 <button type="submit" class="btn mt-6 bg-primary text-on-primary font-label-md text-label-md uppercase tracking-widest py-3.5 hover:opacity-90 transition-opacity w-fit px-8">Save Settings</button>
 </form>
@@ -1448,7 +1450,9 @@ async function saveStoreSettings(){
     shipping_fee: parseFloat(qs('#set-shipping-fee').value) || 0,
     store_email: qs('#set-store-email').value.trim(),
     store_phone: qs('#set-store-phone').value.trim(),
-    default_transporter: qs('#set-default-transporter').value.trim()
+    default_transporter: qs('#set-default-transporter').value.trim(),
+    upi_id: qs('#set-upi-id').value.trim(),
+    upi_payee_name: qs('#set-upi-payee-name').value.trim()
   };
   const ok = await mistiData.saveSettings(patch);
   status.textContent = ok ? 'Saved!' : 'Could not save — check your connection';
@@ -1462,6 +1466,8 @@ function hydrateSettingsForm(s){
   qs('#set-store-email').value = s.store_email || '';
   qs('#set-store-phone').value = s.store_phone || '';
   qs('#set-default-transporter').value = s.default_transporter || '';
+  qs('#set-upi-id').value = s.upi_id || '';
+  qs('#set-upi-payee-name').value = s.upi_payee_name || '';
 }
 
 /* ---------- Order logistics modal ---------- */
