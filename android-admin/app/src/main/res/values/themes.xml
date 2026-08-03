@@ -1,0 +1,9 @@
+<resources>
+    <!--
+      Compose handles all real theming (see ui/theme/Theme.kt) — this XML
+      theme only needs to exist as the Activity's base window theme
+      before Compose content is set, so it deliberately stays minimal and
+      platform-only (no extra Material Components XML dependency needed).
+    -->
+    <style name="Theme.MistiCraftAdmin" parent="android:Theme.Material.Light.NoActionBar" />
+</resources>
