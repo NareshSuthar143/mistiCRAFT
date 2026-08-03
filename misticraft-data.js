@@ -64,6 +64,25 @@
     return '\u20B9' + n.toLocaleString('en-IN');
   }
 
+  /* Indian PIN code -> {city, state} lookup, used to auto-fill address
+     forms. Free, no-key public API (India Post data). Returns null on
+     any failure (invalid/unknown PIN, network error) so callers can
+     just leave the city/state fields for the user to fill manually. */
+  async function lookupPincode(pin) {
+    if (!/^[1-9][0-9]{5}$/.test(String(pin || ''))) return null;
+    try {
+      var res = await fetch('https://api.postalpincode.in/pincode/' + pin);
+      var data = await res.json();
+      var entry = data && data[0];
+      var po = entry && entry.Status === 'Success' && entry.PostOffice && entry.PostOffice[0];
+      if (!po) return null;
+      return { city: po.District || '', state: po.State || '' };
+    } catch (e) {
+      console.error('mistiCRAFT pincode lookup error', e);
+      return null;
+    }
+  }
+
   function uid(prefix) {
     return prefix + '-' + Math.random().toString(36).slice(2, 7);
   }
@@ -576,6 +595,7 @@
     saveData: saveData,
     subscribe: subscribe,
     formatINR: formatINR,
+    lookupPincode: lookupPincode,
     uid: uid,
     slugify: slugify,
     authReady: authReady,
