@@ -248,6 +248,14 @@ alter table customer_orders add column if not exists tracking_id text;
 alter table settings add column if not exists upi_id text;
 alter table settings add column if not exists upi_payee_name text;
 
+-- ---------- Cleanup: drop leftover Razorpay artifacts ----------
+-- Predate the UPI-only switch and were never created by this schema
+-- file (added directly against the live DB by an earlier setup).
+alter table customer_orders drop column if exists razorpay_order_id;
+alter table customer_orders drop column if exists razorpay_payment_id;
+alter table customer_orders drop column if exists payment_status;
+drop table if exists pending_orders;
+
 -- ---------- Store settings (single row) ----------
 create table if not exists settings (
   id int primary key default 1,
