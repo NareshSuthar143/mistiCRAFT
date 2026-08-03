@@ -434,6 +434,28 @@ function toast(message, icon){
 }
 window.toast = toast;
 
+/* ---------- PIN code -> city/state auto-fill ---------- */
+(function(){
+  const pinInput = qs('#addr-pin');
+  const cityInput = qs('#addr-city');
+  const stateInput = qs('#addr-state');
+  if(!pinInput || !cityInput || !stateInput) return;
+  let lastLookedUp = '';
+  pinInput.addEventListener('input', async ()=>{
+    const pin = pinInput.value.trim();
+    if(pin.length !== 6 || pin === lastLookedUp) return;
+    lastLookedUp = pin;
+    const result = await mistiData.lookupPincode(pin);
+    if(pinInput.value.trim() !== pin) return;
+    if(result){
+      cityInput.value = result.city;
+      stateInput.value = result.state;
+    } else {
+      toast('Could not find that PIN code — please enter city/state manually', 'error');
+    }
+  });
+})();
+
 /* ---------- Header scroll shadow ---------- */
 const siteHeader = qs('#site-header');
 if(siteHeader){
