@@ -7,8 +7,8 @@
    5) SQL Editor — run schema.sql (tables + RLS + storage + realtime).
    Full walkthrough: SETUP-SUPABASE.md
    ============================================================ */
-window.MISTI_SUPABASE_URL = "https://YOUR-PROJECT-REF.supabase.co";
-window.MISTI_SUPABASE_ANON_KEY = "YOUR_ANON_PUBLIC_KEY";
+window.MISTI_SUPABASE_URL = "https://pdntxosjtacqgvzavtio.supabase.co";
+window.MISTI_SUPABASE_ANON_KEY = "sb_publishable_9VBe2wn_cBTRWd2hpdbKjA_1evZh79g";
 
 (function () {
   if (typeof supabase === 'undefined' || !supabase.createClient) {
