@@ -1162,8 +1162,9 @@ function customerOrderRowHTML(o){
   const itemsSummary = esc((o.items||[]).map(i=> i.qty + '\u00D7 ' + i.name).join(', '));
   const customerLine = (o.contact && o.contact.email) ? esc(o.contact.email) : ((o.address && o.address.name) ? esc(o.address.name) : 'Guest');
   const logisticsLabel = o.transporter ? (esc(o.transporter) + (o.trackingId ? ('<br/><span class="text-on-surface-variant text-xs">' + esc(o.trackingId) + '</span>') : '')) : '<span class="text-on-surface-variant text-xs">Not set</span>';
+  const utrLine = (o.payment && o.payment.utr) ? ('<br/><span class="text-on-surface-variant text-xs font-normal">UTR: ' + esc(o.payment.utr) + '</span>') : '<br/><span class="text-error text-xs font-normal">No UTR on file</span>';
   return '<tr class="border-b border-outline-variant/10 hover:bg-surface-container-low transition-colors">'
-    + '<td class="py-3 px-2 font-medium">' + o.orderNumber + '</td>'
+    + '<td class="py-3 px-2 font-medium">' + o.orderNumber + utrLine + '</td>'
     + '<td class="py-3 px-2">' + customerLine + '</td>'
     + '<td class="py-3 px-2 max-w-[220px] truncate" title="' + itemsSummary + '">' + itemsSummary + '</td>'
     + '<td class="py-3 px-2 text-right">' + mistiData.formatINR(o.total) + '</td>'

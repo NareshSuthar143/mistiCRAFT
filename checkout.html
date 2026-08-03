@@ -295,7 +295,13 @@ Pay with UPI <span class="material-symbols-outlined text-lg">arrow_forward</span
 </div>
 <p class="font-body-md text-body-md text-on-surface-variant text-sm mb-6">Scan with any UPI app, or tap below to open your UPI app directly &mdash; the amount is filled in automatically.</p>
 <a id="upi-pay-link" href="#" class="btn w-full bg-primary text-on-primary font-label-md text-label-md uppercase tracking-widest py-3.5 mb-4 flex items-center justify-center gap-2"><span class="material-symbols-outlined text-lg">smartphone</span> Pay in UPI App</a>
-<p class="font-label-sm text-label-sm text-on-surface-variant mb-6">Reference: <span id="upi-modal-ref" class="font-bold text-on-surface"></span></p>
+<p class="font-label-sm text-label-sm text-on-surface-variant mb-4">Reference: <span id="upi-modal-ref" class="font-bold text-on-surface"></span></p>
+<div class="field text-left mb-2">
+<input id="upi-utr-input" class="font-body-md text-body-md text-on-surface" placeholder=" " maxlength="12" inputmode="numeric" pattern="[0-9]*" type="text"/>
+<label>UPI Transaction ID (UTR, 12 digits)</label>
+</div>
+<p class="font-label-sm text-label-sm text-on-surface-variant text-left mb-2">Find this in your UPI app's transaction history after paying &mdash; it confirms your payment for us to verify.</p>
+<p id="upi-utr-error" class="hidden font-label-sm text-label-sm text-error text-left mb-4"></p>
 <button onclick="confirmUpiPayment()" id="upi-confirm-btn" class="btn w-full border border-primary text-primary font-label-md text-label-md uppercase tracking-widest py-3.5 hover:bg-primary hover:text-white transition-colors">I&rsquo;ve Completed the Payment</button>
 </div>
 </div>
@@ -563,6 +569,8 @@ function buildUpiUri(amount, ref){
 function openUpiModal(amount, ref){
   qs('#upi-modal-amount').textContent = mistiData.formatINR(amount);
   qs('#upi-modal-ref').textContent = ref;
+  qs('#upi-utr-input').value = '';
+  qs('#upi-utr-error').classList.add('hidden');
   const uri = buildUpiUri(amount, ref);
   qs('#upi-pay-link').href = uri;
   if(window.QRCode){
@@ -627,6 +635,17 @@ window.submitOrder = submitOrder;
 
 async function confirmUpiPayment(){
   if(!PENDING_UPI_ORDER) return;
+  const utrInput = qs('#upi-utr-input');
+  const utrError = qs('#upi-utr-error');
+  const utr = utrInput.value.trim();
+  if(!/^[0-9]{12}$/.test(utr)){
+    utrError.textContent = 'Enter the 12-digit UTR from your UPI app’s transaction history to confirm payment.';
+    utrError.classList.remove('hidden');
+    utrInput.focus();
+    return;
+  }
+  utrError.classList.add('hidden');
+
   const btn = qs('#upi-confirm-btn');
   btn.setAttribute('disabled','disabled');
   btn.classList.add('opacity-60');
@@ -644,7 +663,7 @@ async function confirmUpiPayment(){
       total: pending.subtotal + pending.shipping,
       contact: pending.contact,
       address: pending.address,
-      payment: { method: 'upi', ref: pending.ref }
+      payment: { method: 'upi', ref: pending.ref, utr: utr }
     });
     await mistiData.orders.decrementStock(CHECKOUT_ITEMS);
     await mistiData.cart.clear(CHECKOUT_UID);
