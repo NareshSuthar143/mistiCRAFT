@@ -11,7 +11,30 @@ at the repo root for the tables this app reads/writes
 (`customer_orders`, `products`, `artisans`, `founders`, `settings`,
 `admins`).
 
-## Before you build: read this
+## Building from a phone only (no PC needed)
+
+Push a commit touching this folder (or trigger it manually), then on
+GitHub.com — works fine from a phone browser — go to **Actions** on
+this repo, open the *Android build* workflow run, and download the
+`misticraft-admin-debug-apk` artifact from the **Artifacts** section
+at the bottom of the run page. It downloads as a `.zip` (GitHub always
+zips artifacts) containing `app-debug.apk` — extract it and open the
+APK to install (you'll need to allow "install unknown apps" for your
+browser or file manager the first time).
+
+This also gives you a **real** compiled build — unlike the code in
+this folder itself, `.github/workflows/android-build.yml` runs on a
+GitHub-hosted runner with an actual Android SDK and full internet
+access, so if something doesn't compile, the workflow log tells you
+exactly what and where.
+
+One thing to know: the APK built this way has whatever's currently in
+`SupabaseConfig.kt` baked in. If that's still the placeholder values,
+the app installs and runs but can't talk to Supabase — edit
+`SupabaseConfig.kt` with your real project URL/anon key, push, and
+download the next build.
+
+## Before you build (in Android Studio): read this
 
 This project was written without access to an Android SDK, emulator,
 or the ability to run Gradle in the environment that generated it (that

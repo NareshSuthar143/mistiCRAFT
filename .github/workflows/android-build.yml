@@ -1,0 +1,50 @@
+name: Android build
+
+# Builds a debug APK of android-admin/ on GitHub's runners (which have
+# a real Android SDK and unrestricted internet access, unlike the
+# sandbox this project was originally written in) and uploads it as a
+# downloadable artifact — no PC or Android Studio required to get an
+# installable APK, just a browser.
+on:
+  push:
+    branches: ["**"]
+    paths:
+      - "android-admin/**"
+      - ".github/workflows/android-build.yml"
+  workflow_dispatch: {}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: android-admin
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.7"
+
+      # No committed gradle-wrapper.jar (see android-admin/README.md) —
+      # setup-gradle above installs Gradle itself, so we invoke it
+      # directly instead of via ./gradlew.
+      - name: Build debug APK
+        run: gradle :app:assembleDebug --stacktrace
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: misticraft-admin-debug-apk
+          path: android-admin/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
