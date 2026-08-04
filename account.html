@@ -648,6 +648,8 @@ function authErrorMessage(e){
   if(msg.indexOf('password should be at least') > -1 || msg.indexOf('weak') > -1) return 'Please choose a password with at least 6 characters.';
   if(msg.indexOf('unable to validate email') > -1 || msg.indexOf('invalid email') > -1) return 'Please enter a valid email address.';
   if(msg.indexOf('user not found') > -1) return 'No account found with that email.';
+  if(msg.indexOf('email rate limit exceeded') > -1) return 'Too many signup emails sent recently — please wait a few minutes and try again.';
+  if(msg.indexOf('rate limit') > -1) return 'Too many attempts — please wait a few minutes and try again.';
   return (e && e.message) ? e.message : 'Something went wrong. Please try again.';
 }
 
