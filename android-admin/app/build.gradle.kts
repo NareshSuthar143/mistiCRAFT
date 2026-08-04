@@ -33,9 +33,6 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
-    kotlinOptions {
-        jvmTarget = "17"
-    }
 
     buildFeatures {
         compose = true
@@ -49,6 +46,16 @@ android {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
+    }
+}
+
+// Kotlin Gradle plugin 2.x hard-errors on the old
+// android { kotlinOptions { jvmTarget = "17" } } syntax ("migrate to
+// the compilerOptions DSL") — this is the replacement, as a top-level
+// block sibling to android { }, not nested inside it.
+kotlin {
+    compilerOptions {
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
     }
 }
 
