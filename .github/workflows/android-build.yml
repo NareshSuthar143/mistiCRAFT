@@ -34,7 +34,10 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-version: "8.7"
+          # AGP 8.9.1 (see android-admin/build.gradle.kts) needs a newer
+          # Gradle than 8.7 — bumped within the 8.x line (staying off
+          # Gradle 9.x, which is too new to be confident AGP 8.x supports).
+          gradle-version: "8.14.5"
 
       # No committed gradle-wrapper.jar (see android-admin/README.md) —
       # setup-gradle above installs Gradle itself, so we invoke it

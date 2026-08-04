@@ -1,18 +1,23 @@
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
+    id("org.jetbrains.kotlin.plugin.compose")
     id("org.jetbrains.kotlin.plugin.serialization")
 }
 
 android {
     namespace = "com.misticraft.admin"
-    compileSdk = 34
+    // Bumped from 34 -> 36: CI reported androidx.browser:browser:1.10.0
+    // and Compose UI 1.9.0 (both pulled in transitively) require
+    // compiling against API 36. See build.gradle.kts (root) for the
+    // matching AGP/Kotlin bump this required.
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.misticraft.admin"
         // NotificationListenerService + notification channels need API 26+.
         minSdk = 26
-        targetSdk = 34
+        targetSdk = 36
         versionCode = 1
         versionName = "1.0"
     }
@@ -35,11 +40,10 @@ android {
     buildFeatures {
         compose = true
     }
-    composeOptions {
-        // Must match the Kotlin version above — see the Compose/Kotlin
-        // compatibility map if you bump the Kotlin plugin version.
-        kotlinCompilerExtensionVersion = "1.5.14"
-    }
+    // No composeOptions.kotlinCompilerExtensionVersion here — the
+    // org.jetbrains.kotlin.plugin.compose plugin (applied above) picks
+    // a compatible compiler automatically from the Kotlin version. The
+    // old manual-version mechanism doesn't support Compose UI 1.9.x.
 
     packaging {
         resources {
