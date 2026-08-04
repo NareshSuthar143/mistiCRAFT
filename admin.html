@@ -558,17 +558,26 @@ body[data-page="admin"]{ background:#fbf9f4; }
 <div class="field filled"><input id="pf-mrp" type="number" min="0" step="1" placeholder=" " required/><label>MRP (₹)</label></div>
 <div class="field filled"><input id="pf-stock" type="number" min="0" step="1" placeholder=" " required/><label>Stock (units)</label></div>
 </div>
-<div class="field filled"><input id="pf-img" placeholder=" " oninput="updateProductImgPreview()"/><label>Image URL</label></div>
-<div class="border border-dashed border-outline-variant rounded p-4 flex items-center gap-4">
-<img id="pf-img-preview" src="" alt="" class="w-16 h-16 object-cover rounded bg-surface-container-high hidden"/>
-<div class="flex-1 min-w-0">
-<label class="inline-flex items-center gap-2 cursor-pointer text-primary font-label-sm text-label-sm uppercase tracking-widest hover:underline">
-<span class="material-symbols-outlined text-[18px]">upload</span> Upload a photo instead
-<input type="file" id="pf-img-file" accept="image/*" class="hidden" onchange="handleProductImageUpload(this.files[0])"/>
+<div class="flex flex-col gap-3">
+<label class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">Photos</label>
+<div id="pf-gallery" class="grid grid-cols-4 sm:grid-cols-5 gap-3"></div>
+<div class="border border-dashed border-outline-variant rounded p-4 flex flex-col sm:flex-row sm:items-center gap-3">
+<label class="inline-flex items-center gap-2 cursor-pointer text-primary font-label-sm text-label-sm uppercase tracking-widest hover:underline flex-shrink-0">
+<span class="material-symbols-outlined text-[18px]">upload</span> Add photos
+<input type="file" id="pf-img-file" accept="image/*" multiple class="hidden" onchange="handleProductImageUpload(this.files)"/>
 </label>
-<div id="pf-upload-progress-wrap" class="hidden mt-2 h-1.5 bg-surface-container-high rounded-full overflow-hidden"><div id="pf-upload-progress" class="h-full bg-primary" style="width:0%"></div></div>
-<p id="pf-upload-status" class="font-label-sm text-label-sm text-on-surface-variant mt-1"></p>
+<div class="field filled flex-1 min-w-[180px] !mt-0"><input id="pf-img-url" placeholder=" " onkeydown="if(event.key==='Enter'){event.preventDefault();addProductImageUrl();}"/><label>...or paste an image URL</label></div>
+<button type="button" onclick="addProductImageUrl()" class="font-label-sm text-label-sm uppercase tracking-widest text-primary hover:underline px-2 py-3 flex-shrink-0">Add</button>
 </div>
+<div id="pf-upload-progress-wrap" class="hidden h-1.5 bg-surface-container-high rounded-full overflow-hidden"><div id="pf-upload-progress" class="h-full bg-primary" style="width:0%"></div></div>
+<p id="pf-upload-status" class="font-label-sm text-label-sm text-on-surface-variant"></p>
+</div>
+<div class="field filled">
+<select id="pf-image-fit">
+<option value="cover">Fill frame (crop to fit)</option>
+<option value="contain">Show whole photo (no crop)</option>
+</select>
+<label>Image display style</label>
 </div>
 <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 items-center">
 <div class="field filled">
@@ -991,17 +1000,55 @@ function renderProductsTable(){
   qs('#products-empty').classList.toggle('hidden', LIVE_PRODUCTS.length !== 0);
 }
 
-function updateProductImgPreview(){
-  const url = qs('#pf-img').value.trim();
-  const img = qs('#pf-img-preview');
-  if(url){ img.src = url; img.classList.remove('hidden'); } else { img.classList.add('hidden'); }
+/* ---------- Product photo gallery (Photos field) ---------- */
+let PF_IMAGES = [];
+function renderProductGallery(){
+  const wrap = qs('#pf-gallery');
+  if(!wrap) return;
+  if(!PF_IMAGES.length){
+    wrap.innerHTML = '<p class="col-span-full font-label-sm text-label-sm text-on-surface-variant">No photos yet — add one below. The first photo is the cover shown on the storefront.</p>';
+    return;
+  }
+  wrap.innerHTML = PF_IMAGES.map(function(url, i){
+    return '<div class="relative aspect-square bg-surface-container-high rounded overflow-hidden group/thumb border-2 ' + (i === 0 ? 'border-primary' : 'border-transparent') + '">'
+      + '<img src="' + esc(url) + '" alt="" class="w-full h-full object-cover"/>'
+      + (i === 0 ? '<span class="absolute bottom-1 left-1 bg-primary text-on-primary text-[9px] font-bold uppercase px-1.5 py-0.5 rounded">Cover</span>' : '')
+      + '<div class="absolute inset-0 bg-on-surface/50 opacity-0 group-hover/thumb:opacity-100 transition-opacity flex items-center justify-center gap-1">'
+      + (i > 0 ? '<button type="button" onclick="moveProductImage(' + i + ',-1)" class="text-white p-1" aria-label="Move photo left"><span class="material-symbols-outlined text-[16px]">chevron_left</span></button>' : '')
+      + '<button type="button" onclick="removeProductImage(' + i + ')" class="text-white p-1" aria-label="Remove photo"><span class="material-symbols-outlined text-[16px]">close</span></button>'
+      + (i < PF_IMAGES.length - 1 ? '<button type="button" onclick="moveProductImage(' + i + ',1)" class="text-white p-1" aria-label="Move photo right"><span class="material-symbols-outlined text-[16px]">chevron_right</span></button>' : '')
+      + '</div></div>';
+  }).join('');
 }
+function addProductImageUrl(){
+  const input = qs('#pf-img-url');
+  const url = input.value.trim();
+  if(!url) return;
+  PF_IMAGES.push(url);
+  input.value = '';
+  renderProductGallery();
+}
+function removeProductImage(i){
+  PF_IMAGES.splice(i, 1);
+  renderProductGallery();
+}
+function moveProductImage(i, dir){
+  const j = i + dir;
+  if(j < 0 || j >= PF_IMAGES.length) return;
+  const tmp = PF_IMAGES[i]; PF_IMAGES[i] = PF_IMAGES[j]; PF_IMAGES[j] = tmp;
+  renderProductGallery();
+}
+window.addProductImageUrl = addProductImageUrl;
+window.removeProductImage = removeProductImage;
+window.moveProductImage = moveProductImage;
+
 function openProductModal(id){
   const modal = qs('#product-modal');
   qs('#product-modal-error').classList.add('hidden');
   qs('#pf-upload-status').textContent = '';
   qs('#pf-upload-progress-wrap').classList.add('hidden');
   qs('#pf-img-file').value = '';
+  qs('#pf-img-url').value = '';
   if(id){
     const p = LIVE_PRODUCTS.find(x=> x.id === id);
     if(!p) return;
@@ -1014,7 +1061,8 @@ function openProductModal(id){
     qs('#pf-price').value = p.price;
     qs('#pf-mrp').value = p.mrp;
     qs('#pf-stock').value = p.stock;
-    qs('#pf-img').value = p.img;
+    PF_IMAGES = (p.images && p.images.length) ? p.images.slice() : (p.img ? [p.img] : []);
+    qs('#pf-image-fit').value = p.image_fit || 'cover';
     qs('#pf-status').value = p.status;
     qs('#pf-featured').checked = !!p.featured;
   } else {
@@ -1027,37 +1075,43 @@ function openProductModal(id){
     qs('#pf-price').value = '';
     qs('#pf-mrp').value = '';
     qs('#pf-stock').value = '';
-    qs('#pf-img').value = '';
+    PF_IMAGES = [];
+    qs('#pf-image-fit').value = 'cover';
     qs('#pf-status').value = 'active';
     qs('#pf-featured').checked = false;
   }
-  updateProductImgPreview();
+  renderProductGallery();
   modal.classList.remove('hidden');
   modal.classList.add('flex');
   document.body.style.overflow = 'hidden';
 }
-async function handleProductImageUpload(file){
-  if(!file) return;
+async function handleProductImageUpload(files){
+  files = Array.from(files || []);
+  if(!files.length) return;
   const statusEl = qs('#pf-upload-status');
   const wrap = qs('#pf-upload-progress-wrap');
   const bar = qs('#pf-upload-progress');
   wrap.classList.remove('hidden');
-  bar.style.width = '0%';
-  statusEl.textContent = 'Uploading…';
-  try{
-    const productId = qs('#pf-id').value || mistiData.slugify(qs('#pf-name').value.trim() || 'product');
-    const url = await mistiData.uploadImage(file, 'product-images/' + productId, function(pct){
-      bar.style.width = pct + '%';
-    });
-    qs('#pf-img').value = url;
-    updateProductImgPreview();
-    statusEl.textContent = 'Uploaded ✓';
-    setTimeout(()=>{ wrap.classList.add('hidden'); statusEl.textContent = ''; }, 1500);
-  }catch(e){
-    console.error('mistiCRAFT product image upload error', e);
-    statusEl.textContent = 'Upload failed — check your connection and try again.';
-    wrap.classList.add('hidden');
+  const productId = qs('#pf-id').value || mistiData.slugify(qs('#pf-name').value.trim() || 'product');
+  for(let i = 0; i < files.length; i++){
+    bar.style.width = '0%';
+    statusEl.textContent = 'Uploading ' + (i + 1) + ' of ' + files.length + '…';
+    try{
+      const url = await mistiData.uploadImage(files[i], 'product-images/' + productId, function(pct){
+        bar.style.width = pct + '%';
+      });
+      PF_IMAGES.push(url);
+      renderProductGallery();
+    }catch(e){
+      console.error('mistiCRAFT product image upload error', e);
+      statusEl.textContent = 'Upload failed — check your connection and try again.';
+      wrap.classList.add('hidden');
+      return;
+    }
   }
+  statusEl.textContent = 'Uploaded ✓';
+  setTimeout(()=>{ wrap.classList.add('hidden'); statusEl.textContent = ''; }, 1500);
+  qs('#pf-img-file').value = '';
 }
 window.handleProductImageUpload = handleProductImageUpload;
 function closeProductModal(){
@@ -1078,7 +1132,8 @@ async function saveProduct(){
     return;
   }
   const existingId = qs('#pf-id').value;
-  const img = qs('#pf-img').value.trim() || 'https://lh3.googleusercontent.com/aida-public/AB6AXuAqsyX3913LsvZBSkdz8wmnx0qs5jhxRU6vzb1dKFMNQZK7Os41syw7n5oReCHBnsloXIwYAzPb42HqTNeG3t4NPOftmYradAxWRJXnzNv1YSu0FJHcA5V8vCDGSajw1IV_po9eHQ-rOwSfVTNHz4e0nIyxzK03l4Z1dVfuz3k-9R-ojEZ-mvmLXe0VL4v-5QPRK6fIO7emhDMS9BIwdHvFzxhoG4aUqPiqbMAd0JcObXV9h1vunaZG97FDbRosZqwRv60p2tq-I4RK';
+  const fallbackImg = 'https://lh3.googleusercontent.com/aida-public/AB6AXuAqsyX3913LsvZBSkdz8wmnx0qs5jhxRU6vzb1dKFMNQZK7Os41syw7n5oReCHBnsloXIwYAzPb42HqTNeG3t4NPOftmYradAxWRJXnzNv1YSu0FJHcA5V8vCDGSajw1IV_po9eHQ-rOwSfVTNHz4e0nIyxzK03l4Z1dVfuz3k-9R-ojEZ-mvmLXe0VL4v-5QPRK6fIO7emhDMS9BIwdHvFzxhoG4aUqPiqbMAd0JcObXV9h1vunaZG97FDbRosZqwRv60p2tq-I4RK';
+  const images = PF_IMAGES.length ? PF_IMAGES.slice() : [fallbackImg];
   const data = {
     id: existingId || mistiData.slugify(name),
     name, tagline: qs('#pf-tagline').value.trim(),
@@ -1087,7 +1142,9 @@ async function saveProduct(){
     price, mrp, stock,
     status: qs('#pf-status').value,
     featured: qs('#pf-featured').checked,
-    img
+    img: images[0],
+    images,
+    image_fit: qs('#pf-image-fit').value
   };
   if(existingId){
     const idx = LIVE_PRODUCTS.findIndex(x=> x.id === existingId);
