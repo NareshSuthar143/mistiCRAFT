@@ -7,8 +7,8 @@ package com.misticraft.admin.config
  * Supabase Dashboard > Project Settings > API before building.
  */
 object SupabaseConfig {
-    const val SUPABASE_URL = "https://YOUR-PROJECT-REF.supabase.co"
-    const val SUPABASE_ANON_KEY = "YOUR_ANON_PUBLIC_KEY"
+    const val SUPABASE_URL = "https://pdntxosjtacqgvzavtio.supabase.co"
+    const val SUPABASE_ANON_KEY = "sb_publishable_9VBe2wn_cBTRWd2hpdbKjA_1evZh79g"
 
     val isConfigured: Boolean
         get() = !SUPABASE_URL.contains("YOUR-PROJECT-REF") && !SUPABASE_ANON_KEY.contains("YOUR_ANON_PUBLIC_KEY")
