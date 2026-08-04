@@ -207,7 +207,12 @@
   function authReady() { return authReadyPromise; }
   function currentUser() { return cachedUser; }
   function onAuthChange(cb) {
-    return db().auth.onAuthStateChange(function (_event, session) { cb(session ? session.user : null); });
+    try {
+      return db().auth.onAuthStateChange(function (_event, session) { cb(session ? session.user : null); });
+    } catch (e) {
+      console.error('mistiCRAFT onAuthChange init error', e);
+      return { data: { subscription: { unsubscribe: function () {} } } };
+    }
   }
 
   async function mergeGuestData(fromUid, toUid) {
@@ -277,7 +282,10 @@
     return result.data.user;
   }
 
-  function logOut() { return db().auth.signOut(); }
+  function logOut() {
+    try { return db().auth.signOut(); }
+    catch (e) { console.error('mistiCRAFT logOut error', e); return Promise.resolve({ error: e }); }
+  }
 
   async function isAdmin(uid) {
     if (!uid) return false;
@@ -316,13 +324,19 @@
     }
   }
   function subscribeSettings(cb) {
-    var client = db();
-    var refetch = async function () { cb(await getSettings()); };
-    refetch();
-    var channel = client.channel('mc-settings')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'settings' }, refetch)
-      .subscribe();
-    return function () { client.removeChannel(channel); };
+    try {
+      var client = db();
+      var refetch = async function () { cb(await getSettings()); };
+      refetch();
+      var channel = client.channel('mc-settings')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'settings' }, refetch)
+        .subscribe();
+      return function () { client.removeChannel(channel); };
+    } catch (e) {
+      console.error('mistiCRAFT subscribeSettings init error', e);
+      cb({ shipping_fee: 99, store_email: '', store_phone: '', default_transporter: '', upi_id: '', upi_payee_name: '' });
+      return function () {};
+    }
   }
   async function saveSettings(patch) {
     try {
