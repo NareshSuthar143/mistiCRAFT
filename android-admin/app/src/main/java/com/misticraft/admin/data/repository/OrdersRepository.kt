@@ -8,6 +8,7 @@ import io.github.jan.supabase.realtime.PostgresAction
 import io.github.jan.supabase.realtime.channel
 import io.github.jan.supabase.realtime.postgresChangeFlow
 import io.github.jan.supabase.realtime.realtime
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
@@ -60,7 +61,14 @@ class OrdersRepository {
         val changeFlow = channel.postgresChangeFlow<PostgresAction>(schema = "public") {
             table = "customer_orders"
         }
-        val job = launch {
+        // UNDISPATCHED: postgresChangeFlow() only builds the Flow — the
+        // channel registration happens when it's actually collected. A
+        // normally-dispatched launch{} doesn't run before the next
+        // line, so channel.subscribe() would join first and this flow's
+        // registration would throw "cannot call postgresChangeFlow
+        // after joining the channel". Starting undispatched runs the
+        // collect (and its registration) synchronously right here.
+        val job = launch(start = CoroutineStart.UNDISPATCHED) {
             changeFlow.collect { trySend(fetchAll()) }
         }
         channel.subscribe()

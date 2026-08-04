@@ -7,6 +7,7 @@ import io.github.jan.supabase.realtime.PostgresAction
 import io.github.jan.supabase.realtime.channel
 import io.github.jan.supabase.realtime.postgresChangeFlow
 import io.github.jan.supabase.realtime.realtime
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
@@ -31,7 +32,10 @@ class ProductsRepository {
         val changeFlow = channel.postgresChangeFlow<PostgresAction>(schema = "public") {
             table = "products"
         }
-        val job = launch { changeFlow.collect { trySend(fetchAll()) } }
+        // UNDISPATCHED so collect() (and the channel registration it
+        // triggers) runs synchronously before channel.subscribe() joins
+        // — see OrdersRepository.kt for the full explanation.
+        val job = launch(start = CoroutineStart.UNDISPATCHED) { changeFlow.collect { trySend(fetchAll()) } }
         channel.subscribe()
         awaitClose {
             job.cancel()
