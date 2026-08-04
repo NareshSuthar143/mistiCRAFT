@@ -574,10 +574,16 @@ function productCardHTML(p, index){
     ? mistiData.formatINR(p.price) + '<span class="font-body-md text-on-surface-variant line-through opacity-50 text-sm ml-2">MRP ' + mistiData.formatINR(p.mrp) + '</span>'
     : 'MRP ' + mistiData.formatINR(p.price);
   const soldOut = p.stock <= 0 ? '<span class="absolute top-4 left-4 z-10 bg-surface/90 text-error font-label-sm text-label-sm uppercase px-2 py-1 tracking-widest">Sold Out</span>' : '';
+  const fitClass = p.image_fit === 'contain' ? 'object-contain' : 'object-cover';
+  const images = (p.images && p.images.length) ? p.images : [p.img];
+  const hoverImg = images.length > 1
+    ? '<img class="absolute inset-0 w-full h-full ' + fitClass + ' opacity-0 group-hover:opacity-100 transition-opacity duration-500" loading="lazy" alt="" src="' + esc(images[1]) + '"/>'
+    : '';
   return '<div class="product-card group cursor-pointer" data-reveal style="--d:' + (0.02 * index).toFixed(2) + 's" data-name="' + esc(p.name) + '" data-price="' + p.price + '" data-category="' + p.category + '" data-technique="' + p.technique + '">'
   + '<div class="relative aspect-[4/5] overflow-hidden bg-surface-container-low border border-outline-variant/10">'
   + '<a href="product.html" aria-label="View ' + esc(p.name) + '">'
-  + '<img class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" loading="lazy" alt="' + esc(p.name) + '" src="' + p.img + '"/>'
+  + '<img class="w-full h-full ' + fitClass + ' transition-transform duration-700 group-hover:scale-110" loading="lazy" alt="' + esc(p.name) + '" src="' + esc(images[0]) + '"/>'
+  + hoverImg
   + '</a>'
   + soldOut
   + '<div class="absolute top-4 right-4 z-10">'
@@ -625,8 +631,11 @@ function openQuickView(id){
   const p = LIVE_PRODUCTS.find(x=> x.id === id);
   if(!p) return;
   qvActiveProductId = id;
-  qs('#qv-image').src = p.img;
-  qs('#qv-image').alt = p.name;
+  const qvImg = qs('#qv-image');
+  qvImg.src = (p.images && p.images[0]) || p.img;
+  qvImg.alt = p.name;
+  qvImg.classList.remove('object-cover','object-contain');
+  qvImg.classList.add(p.image_fit === 'contain' ? 'object-contain' : 'object-cover');
   qs('#qv-title').textContent = p.name;
   qs('#qv-price').textContent = mistiData.formatINR(p.price) + (p.mrp > p.price ? '   MRP ' + mistiData.formatINR(p.mrp) : '');
   const modal = qs('#quick-view');
