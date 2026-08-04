@@ -118,3 +118,11 @@ Pages, etc.) — this is plain HTML/CSS/JS, no build step, no server.
   but a project created before running it may need a manual toggle there.
 - **Stuck after signup on "check your email"** — that's expected if
   "Confirm email" is on (step 2). Turn it off for instant activation.
+- **"email rate limit exceeded" when creating an account** — Supabase's
+  built-in email service (the default, before you add custom SMTP) only
+  sends a handful of confirmation emails per hour for the whole project,
+  not per user. Repeated signups/testing burns through that fast. Fixes:
+  turn off **"Confirm email"** (step 2) so signup never sends an email, or
+  add your own SMTP provider under **Project Settings → Auth → SMTP
+  Settings** to lift the limit. Either way, just wait a few minutes and
+  retry in the meantime.
