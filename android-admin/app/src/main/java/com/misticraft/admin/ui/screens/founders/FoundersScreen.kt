@@ -16,6 +16,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -38,6 +39,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.misticraft.admin.data.models.Founder
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FoundersScreen(onEdit: (String?) -> Unit, viewModel: FoundersViewModel = viewModel()) {
     val founders by viewModel.founders.collectAsState()

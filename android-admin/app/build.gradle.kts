@@ -1,18 +1,23 @@
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
+    id("org.jetbrains.kotlin.plugin.compose")
     id("org.jetbrains.kotlin.plugin.serialization")
 }
 
 android {
     namespace = "com.misticraft.admin"
-    compileSdk = 34
+    // Bumped from 34 -> 36: CI reported androidx.browser:browser:1.10.0
+    // and Compose UI 1.9.0 (both pulled in transitively) require
+    // compiling against API 36. See build.gradle.kts (root) for the
+    // matching AGP/Kotlin bump this required.
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.misticraft.admin"
         // NotificationListenerService + notification channels need API 26+.
         minSdk = 26
-        targetSdk = 34
+        targetSdk = 36
         versionCode = 1
         versionName = "1.0"
     }
@@ -28,23 +33,29 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
-    kotlinOptions {
-        jvmTarget = "17"
-    }
 
     buildFeatures {
         compose = true
     }
-    composeOptions {
-        // Must match the Kotlin version above — see the Compose/Kotlin
-        // compatibility map if you bump the Kotlin plugin version.
-        kotlinCompilerExtensionVersion = "1.5.14"
-    }
+    // No composeOptions.kotlinCompilerExtensionVersion here — the
+    // org.jetbrains.kotlin.plugin.compose plugin (applied above) picks
+    // a compatible compiler automatically from the Kotlin version. The
+    // old manual-version mechanism doesn't support Compose UI 1.9.x.
 
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
+    }
+}
+
+// Kotlin Gradle plugin 2.x hard-errors on the old
+// android { kotlinOptions { jvmTarget = "17" } } syntax ("migrate to
+// the compilerOptions DSL") — this is the replacement, as a top-level
+// block sibling to android { }, not nested inside it.
+kotlin {
+    compilerOptions {
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
     }
 }
 
@@ -66,10 +77,13 @@ dependencies {
     implementation("androidx.navigation:navigation-compose:2.7.7")
 
     // -- Supabase (Postgrest/Auth/Realtime/Storage) --
-    // Pin to whatever the current stable release is when you open this in
-    // Android Studio — the API here targets the supabase-kt 2.x shape.
+    // Verified against Maven Central's actual published versions (see
+    // repo.maven.apache.org/maven2/io/github/jan-tennert/supabase/) —
+    // auth-kt only exists from 3.0.0 onward (it was gotrue-kt before
+    // that), so this must stay on the 3.x line. Re-check that URL if a
+    // future bump is needed.
     // https://github.com/supabase-community/supabase-kt
-    val supabaseVersion = "2.6.0"
+    val supabaseVersion = "3.7.0"
     implementation("io.github.jan-tennert.supabase:postgrest-kt:$supabaseVersion")
     implementation("io.github.jan-tennert.supabase:auth-kt:$supabaseVersion")
     implementation("io.github.jan-tennert.supabase:realtime-kt:$supabaseVersion")
