@@ -88,7 +88,16 @@ dependencies {
     implementation("io.github.jan-tennert.supabase:auth-kt:$supabaseVersion")
     implementation("io.github.jan-tennert.supabase:realtime-kt:$supabaseVersion")
     implementation("io.github.jan-tennert.supabase:storage-kt:$supabaseVersion")
-    implementation("io.ktor:ktor-client-okhttp:2.3.12")
+    // supabase-kt-android:3.7.0's Gradle module metadata requires
+    // io.ktor:ktor-client-core:3.5.1 (verified via its .module file on
+    // Maven Central) but doesn't bring its own HTTP engine — the app
+    // supplies one. We had this pinned at 2.3.12, so Gradle resolved
+    // ktor-client-core up to 3.5.1 (highest requested wins) while
+    // ktor-client-okhttp stayed at 2.3.12 (nothing else requests it).
+    // That old-engine/new-core mismatch is exactly why OkHttpEngine
+    // crashed at runtime with NoClassDefFoundError on HttpTimeout —
+    // matching the engine to the core version fixes it.
+    implementation("io.ktor:ktor-client-okhttp:3.5.1")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
 
