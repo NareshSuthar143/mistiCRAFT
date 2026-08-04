@@ -60,7 +60,21 @@ kotlin {
 }
 
 dependencies {
-    val composeBom = platform("androidx.compose:compose-bom:2024.06.00")
+    // Bumped from 2024.06.00: that BOM pins androidx.compose.material:material-ripple
+    // (and material3) to an old release that still hands out a plain
+    // Indication (PlatformRipple) from LocalIndication, but something
+    // in the dependency graph (activity-compose etc.) was already
+    // forcing androidx.compose.foundation up to ~1.9.x transitively —
+    // whose clickable() requires an IndicationNodeFactory. That split
+    // — new foundation, old material-ripple — is exactly the
+    // "clickable only supports IndicationNodeFactory... Indication was
+    // provided instead... PlatformRipple" crash the user hit at
+    // runtime. 2026.06.01 is the latest stable BOM (verified against
+    // developer.android.com's BOM-to-library mapping page, which pins
+    // foundation/ui/material/material-ripple all to 1.11.4 and
+    // material3 to 1.4.0 together) — using one current BOM for
+    // everything keeps these in lockstep instead of half-old/half-new.
+    val composeBom = platform("androidx.compose:compose-bom:2026.06.01")
     implementation(composeBom)
     androidTestImplementation(composeBom)
 
