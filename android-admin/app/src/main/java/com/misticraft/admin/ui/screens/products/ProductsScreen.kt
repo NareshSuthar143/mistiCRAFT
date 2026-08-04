@@ -15,6 +15,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.Card
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -36,6 +37,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.misticraft.admin.data.models.Product
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProductsScreen(onEdit: (String?) -> Unit, viewModel: ProductsViewModel = viewModel()) {
     val products by viewModel.products.collectAsState()

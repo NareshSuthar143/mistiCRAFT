@@ -4,6 +4,7 @@ import com.misticraft.admin.data.SupabaseClientProvider
 import com.misticraft.admin.data.models.Artisan
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.realtime.PostgresAction
+import io.github.jan.supabase.realtime.channel
 import io.github.jan.supabase.realtime.postgresChangeFlow
 import io.github.jan.supabase.realtime.realtime
 import kotlinx.coroutines.channels.awaitClose
