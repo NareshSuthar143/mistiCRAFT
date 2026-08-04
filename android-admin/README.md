@@ -36,14 +36,15 @@ download the next build.
 
 ## Before you build (in Android Studio): read this
 
-This project was written without access to an Android SDK, emulator,
-or the ability to run Gradle in the environment that generated it (that
-environment's network policy blocks Google's Maven / Maven Central —
-the exact hosts Gradle needs). Every file here was written carefully
-and deliberately by hand, matching the supabase-kt 2.x API shape as
-documented, but **it has not been compiled**. Treat first build in
-Android Studio as the real first test, and expect to possibly fix small
-things:
+This project was originally written without access to an Android SDK,
+emulator, or the ability to run Gradle in the environment that
+generated it (that environment's network policy blocks Google's Maven /
+Maven Central — the exact hosts Gradle needs). It's now compile-checked
+by the GitHub Actions workflow above, which already caught and fixed one
+real issue (a supabase-kt artifact/version mismatch — it's pinned to
+the 3.x line now, see the comment in `app/build.gradle.kts`). If you
+build in Android Studio instead, watch for similar small things CI
+hasn't hit yet:
 
 - **Library API drift.** `io.github.jan-tennert.supabase` (supabase-kt)
   evolves between versions. If a call doesn't resolve, check the
