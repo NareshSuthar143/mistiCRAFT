@@ -112,9 +112,6 @@ details.acc[open] .acc-chevron{ transform:rotate(180deg); }
 
 .tech-pill.active{ background:#775a19; color:#fff; border-color:#775a19; }
 .color-swatch.active{ box-shadow:0 0 0 2px #fff, 0 0 0 4px #775a19; }
-.qv-size.active{ border-color:#775a19; background:#775a19; color:#fff; }
-#quick-view.flex .modal-panel{ opacity:1; transform:scale(1); }
-#quick-view.flex .modal-backdrop{ opacity:1; }
 #filter-drawer:not(.invisible) .modal-backdrop{ opacity:1; }
 #filter-drawer:not(.invisible) .drawer-panel{ transform:translateX(0); }
 .product-card{ transition: opacity .35s ease, transform .35s ease; }
@@ -284,44 +281,13 @@ details.acc[open] .acc-chevron{ transform:rotate(180deg); }
 </div>
 </div>
 
-<!-- Quick View Modal -->
-<div class="fixed inset-0 z-[70] hidden items-center justify-center p-4" id="quick-view">
-<div class="modal-backdrop absolute inset-0 bg-black/60 backdrop-blur-md opacity-0" onclick="closeQuickView()"></div>
-<div class="modal-panel opacity-0 scale-95 bg-surface w-full max-w-4xl relative z-10 flex flex-col md:flex-row max-h-[90vh] overflow-y-auto">
-<button class="absolute top-4 right-4 z-20 bg-surface/80 p-2 rounded-full hover:rotate-90 transition-transform duration-300" onclick="closeQuickView()" aria-label="Close quick view"><span class="material-symbols-outlined">close</span></button>
-<div class="w-full md:w-1/2 aspect-square bg-surface-container-low">
-<img class="w-full h-full object-cover" id="qv-image" alt="" src=""/>
-</div>
-<div class="w-full md:w-1/2 p-8 md:p-12 flex flex-col">
-<div class="mb-8">
-<span class="font-label-sm text-label-sm text-tertiary uppercase tracking-widest block mb-2">Sustainable Luxury</span>
-<h2 class="font-display-lg-mobile text-display-lg-mobile mb-2" id="qv-title">Product Title</h2>
-<p class="font-headline-md text-headline-md text-primary" id="qv-price">₹0</p>
-</div>
-<p class="font-body-md text-body-md text-on-surface-variant mb-8">This limited edition piece is handcrafted by our master artisans in Udaipur using ethically sourced materials. Each stitch tells a story of 400 years of Rajasthani tradition, reimagined for the modern aesthetic.</p>
-<div class="mb-8">
-<h4 class="font-label-sm text-label-sm text-on-surface-variant uppercase mb-3">Select Size</h4>
-<div class="flex gap-2" id="qv-sizes">
-<button class="qv-size w-12 h-12 border border-outline-variant font-label-md text-label-md flex items-center justify-center hover:border-primary transition-colors">S</button>
-<button class="qv-size w-12 h-12 border border-primary bg-primary text-white font-label-md text-label-md flex items-center justify-center">M</button>
-<button class="qv-size w-12 h-12 border border-outline-variant font-label-md text-label-md flex items-center justify-center hover:border-primary transition-colors">L</button>
-<button class="qv-size w-12 h-12 border border-outline-variant font-label-md text-label-md flex items-center justify-center hover:border-primary transition-colors">XL</button>
-</div>
-</div>
-<div class="mt-auto flex flex-col gap-3">
-<button class="btn w-full bg-secondary text-on-secondary font-label-md text-label-md py-4 tracking-widest hover:opacity-90 transition-all" onclick="quickAddToBag()">ADD TO BAG</button>
-<button class="btn w-full border border-primary text-primary font-label-md text-label-md py-4 tracking-widest hover:bg-primary-container/10 transition-all" onclick="toggleWishlist(this); quickViewWishlist()">WISHLIST</button>
-</div>
-</div>
-</div>
-</div>
 
 <footer class="bg-surface-container dark:bg-inverse-surface border-t border-outline-variant/20 pt-section-padding-desktop pb-gutter mt-section-padding-desktop">
 <div class="grid grid-cols-1 md:grid-cols-4 gap-gutter px-container-margin max-w-[1280px] mx-auto">
 <div class="flex flex-col gap-5 col-span-1">
 <a href="index.html" class="flex items-center gap-2 text-on-surface dark:text-inverse-on-surface w-fit">
 <span class="brand-logo w-8 h-8 text-primary" aria-hidden="true"></span>
-<span class="font-display-lg text-display-lg tracking-tighter">mistiCRAFT</span>
+<span class="font-display-lg text-headline-md tracking-tighter">mistiCRAFT</span>
 </a>
 <p class="font-body-md text-body-md text-on-surface-variant dark:text-surface-variant max-w-[240px]">Honoring the master artisans of Udaipur through modern silhouettes and timeless craft.</p>
 <div class="flex gap-4 pt-1">
@@ -528,13 +494,13 @@ function productCardHTML(p, index){
   + '<a href="' + href + '" aria-label="View ' + esc(p.name) + '">'
   + '<img class="w-full h-full ' + fitClass + ' transition-transform duration-700 group-hover:scale-110" loading="lazy" alt="' + esc(p.name) + '" src="' + esc(images[0]) + '"/>'
   + hoverImg
+  + '<div class="absolute inset-0 bg-on-surface/0 group-hover:bg-on-surface/10 transition-colors duration-300 flex items-end justify-center pb-8">'
+  + '<span class="opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-300 bg-surface text-primary font-label-md text-label-md px-6 py-2.5 tracking-widest">SHOP NOW</span>'
+  + '</div>'
   + '</a>'
   + soldOut
   + '<div class="absolute top-4 right-4 z-10">'
   + '<button onclick="toggleProductWishlist(this,\'' + p.id + '\')" class="bg-surface/80 p-2 rounded-full hover:text-tertiary transition-colors" aria-label="Add to wishlist"><span class="material-symbols-outlined text-[20px]">favorite</span></button>'
-  + '</div>'
-  + '<div class="quick-view-overlay absolute inset-0 bg-primary/20 flex items-end justify-center pb-8 opacity-0 group-hover:opacity-100 transition-opacity duration-300">'
-  + '<button onclick="openQuickView(\'' + p.id + '\')" class="bg-surface text-primary font-label-md text-label-md px-8 py-3 tracking-widest hover:bg-primary hover:text-white transition-colors duration-300">QUICK VIEW</button>'
   + '</div></div>'
   + '<div class="mt-4 flex justify-between items-start gap-2">'
   + '<a href="' + href + '"><h3 class="font-headline-md text-headline-md leading-tight hover:text-primary transition-colors">' + esc(p.name) + '</h3>'
@@ -568,41 +534,6 @@ async function renderProductGrid(){
 }
 mistiData.subscribe(mistiData.KEYS.products, renderProductGrid);
 
-/* ---------- Quick View ---------- */
-let qvActiveTrigger = null;
-let qvActiveProductId = null;
-function openQuickView(id){
-  const p = LIVE_PRODUCTS.find(x=> x.id === id);
-  if(!p) return;
-  qvActiveProductId = id;
-  const qvImg = qs('#qv-image');
-  qvImg.src = (p.images && p.images[0]) || p.img;
-  qvImg.alt = p.name;
-  qvImg.classList.remove('object-cover','object-contain');
-  qvImg.classList.add(p.image_fit === 'contain' ? 'object-contain' : 'object-cover');
-  qs('#qv-title').textContent = p.name;
-  qs('#qv-price').textContent = mistiData.formatINR(p.price) + (p.mrp > p.price ? '   MRP ' + mistiData.formatINR(p.mrp) : '');
-  const modal = qs('#quick-view');
-  modal.classList.remove('hidden');
-  modal.classList.add('flex');
-  document.body.style.overflow = 'hidden';
-}
-function closeQuickView(){
-  const modal = qs('#quick-view');
-  modal.classList.remove('flex');
-  modal.classList.add('hidden');
-  document.body.style.overflow = '';
-}
-async function quickAddToBag(){
-  const p = LIVE_PRODUCTS.find(x=> x.id === qvActiveProductId);
-  if(!p) return;
-  const size = qs('.qv-size.active') ? qs('.qv-size.active').textContent : 'M';
-  bumpCartBadge(1);
-  toast('Added to your bag — ' + p.name + ' (Size ' + size + ')', 'shopping_bag');
-  closeQuickView();
-  const user = await mistiData.authReady();
-  if(user) await mistiData.cart.add(user.id, {id:p.id, name:p.name, price:p.price, img:p.img, size:size, qty:1});
-}
 async function toggleProductWishlist(btn, id){
   toggleWishlist(btn);
   const p = LIVE_PRODUCTS.find(x=> x.id === id);
@@ -610,23 +541,7 @@ async function toggleProductWishlist(btn, id){
   const user = await mistiData.authReady();
   if(user) await mistiData.wishlist.toggle(user.id, {id:p.id, name:p.name, price:p.price, img:p.img});
 }
-async function quickViewWishlist(){
-  const p = LIVE_PRODUCTS.find(x=> x.id === qvActiveProductId);
-  if(!p) return;
-  const user = await mistiData.authReady();
-  if(user) await mistiData.wishlist.toggle(user.id, {id:p.id, name:p.name, price:p.price, img:p.img});
-}
 window.toggleProductWishlist = toggleProductWishlist;
-window.quickViewWishlist = quickViewWishlist;
-qsa('.qv-size').forEach(btn=>{
-  btn.addEventListener('click', ()=>{
-    qsa('.qv-size').forEach(b=> b.classList.remove('active','border-primary','bg-primary','text-white'));
-    btn.classList.add('active','border-primary','bg-primary','text-white');
-  });
-});
-window.openQuickView = openQuickView;
-window.closeQuickView = closeQuickView;
-window.quickAddToBag = quickAddToBag;
 
 /* ---------- Filter Drawer ---------- */
 function toggleFilterDrawer(){
