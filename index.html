@@ -602,9 +602,14 @@ function showHeroSlide(i){
     if(s.tagName === 'VIDEO' && idx !== i){ s.pause(); }
   });
   heroIndex = i;
-  if(slides.length < 2) return;
   const active = slides[i];
+  if(slides.length < 2){
+    // Nothing to cycle to — loop a lone video instead of freezing on its last frame.
+    if(active.tagName === 'VIDEO'){ active.loop = true; active.play().catch(function(){}); }
+    return;
+  }
   if(active.tagName === 'VIDEO'){
+    active.loop = false;
     active.currentTime = 0;
     active.play().catch(function(){});
     active.onended = advanceHeroSlide;
