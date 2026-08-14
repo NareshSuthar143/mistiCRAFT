@@ -294,3 +294,23 @@ alter table products add constraint products_rank_check check (rank in ('top','c
 -- (see mistiData.isVideoUrl), so no separate "type" column is needed.
 alter table settings add column if not exists hero_media_url text;
 
+-- Storage bucket for hero uploads — handleHeroMediaUpload() in admin.html
+-- uploads to 'hero-media', but no bucket by that name was ever created,
+-- so every hero upload failed with "Upload failed — check your connection".
+insert into storage.buckets (id, name, public)
+values ('hero-media', 'hero-media', true)
+on conflict (id) do nothing;
+
+drop policy if exists "hero media public read" on storage.objects;
+create policy "hero media public read" on storage.objects
+for select using (bucket_id = 'hero-media');
+drop policy if exists "hero media admin insert" on storage.objects;
+create policy "hero media admin insert" on storage.objects
+for insert with check (bucket_id = 'hero-media' and is_admin());
+drop policy if exists "hero media admin update" on storage.objects;
+create policy "hero media admin update" on storage.objects
+for update using (bucket_id = 'hero-media' and is_admin());
+drop policy if exists "hero media admin delete" on storage.objects;
+create policy "hero media admin delete" on storage.objects
+for delete using (bucket_id = 'hero-media' and is_admin());
+
