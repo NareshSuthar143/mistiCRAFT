@@ -88,8 +88,6 @@ body{ -webkit-font-smoothing:antialiased; }
 .modal-panel{ transition:opacity .35s ease, transform .4s var(--ease); }
 .modal-backdrop{ transition:opacity .35s ease; }
 
-.viewer-360{ perspective:1200px; touch-action:none; }
-.viewer-360-inner{ transform-style:preserve-3d; will-change:transform; }
 .shimmer-sweep{ background:linear-gradient(75deg,transparent 42%,rgba(255,255,255,.6) 50%,transparent 58%); mix-blend-mode:overlay; }
 
 .ornament{ color:#c5a059; }
@@ -456,6 +454,22 @@ body[data-page="admin"]{ background:#fbf9f4; }
 <div class="field filled"><input id="set-default-transporter" type="text" placeholder=" "/><label>Default Transporter Name</label></div>
 <div class="field filled"><input id="set-upi-id" type="text" placeholder=" "/><label>UPI ID (VPA) — e.g. yourshop@okhdfcbank</label></div>
 <div class="field filled"><input id="set-upi-payee-name" type="text" placeholder=" "/><label>Payee Name (shown to customers)</label></div>
+<div class="mt-4">
+<p class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest mb-3">Homepage Hero — photo or video</p>
+<div class="field filled"><input id="set-hero-media-url" placeholder=" " oninput="updateHeroMediaPreview()"/><label>Hero Media URL</label></div>
+<div class="border border-dashed border-outline-variant rounded p-4 flex items-center gap-4">
+<img id="set-hero-media-preview-img" src="" alt="" class="w-16 h-16 object-cover rounded bg-surface-container-high hidden"/>
+<video id="set-hero-media-preview-video" src="" muted loop autoplay playsinline class="w-16 h-16 object-cover rounded bg-surface-container-high hidden"></video>
+<div class="flex-1 min-w-0">
+<label class="inline-flex items-center gap-2 cursor-pointer text-primary font-label-sm text-label-sm uppercase tracking-widest hover:underline">
+<span class="material-symbols-outlined text-[18px]">upload</span> Upload a photo or video instead
+<input type="file" id="set-hero-media-file" accept="image/*,video/*" class="hidden" onchange="handleHeroMediaUpload(this.files[0])"/>
+</label>
+<div id="set-hero-media-upload-progress-wrap" class="hidden mt-2 h-1.5 bg-surface-container-high rounded-full overflow-hidden"><div id="set-hero-media-upload-progress" class="h-full bg-primary" style="width:0%"></div></div>
+<p id="set-hero-media-upload-status" class="font-label-sm text-label-sm text-on-surface-variant mt-1"></p>
+</div>
+</div>
+</div>
 <p id="settings-save-status" class="hidden font-label-sm text-label-sm text-primary mt-3"></p>
 <button type="submit" class="btn mt-6 bg-primary text-on-primary font-label-md text-label-md uppercase tracking-widest py-3.5 hover:opacity-90 transition-opacity w-fit px-8">Save Settings</button>
 </form>
@@ -524,16 +538,20 @@ body[data-page="admin"]{ background:#fbf9f4; }
 </select>
 <label>Image display style</label>
 </div>
-<div class="grid grid-cols-1 sm:grid-cols-2 gap-6 items-center">
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
 <div class="field filled">
 <select id="pf-status"><option value="active">Active</option><option value="draft">Draft</option></select>
 <label>Status</label>
 </div>
-<label class="flex items-center gap-3 cursor-pointer mt-2">
+<div class="field filled">
+<select id="pf-rank"><option value="top">Top</option><option value="center" selected>Center</option><option value="bottom">Bottom</option></select>
+<label>Shop Sort Rank</label>
+</div>
+</div>
+<label class="flex items-center gap-3 cursor-pointer">
 <input type="checkbox" id="pf-featured" class="w-5 h-5 border-outline rounded-none text-primary focus:ring-primary"/>
 <span class="font-body-md text-body-md">Show in homepage Featured Collection</span>
 </label>
-</div>
 <p id="product-modal-error" class="hidden font-label-sm text-label-sm text-error"></p>
 <div class="flex gap-4 mt-2">
 <button type="button" onclick="saveProduct()" class="btn flex-1 py-4 bg-primary text-white font-label-md uppercase tracking-widest hover:brightness-110">Save Product</button>
@@ -1009,6 +1027,7 @@ function openProductModal(id){
     PF_IMAGES = (p.images && p.images.length) ? p.images.slice() : (p.img ? [p.img] : []);
     qs('#pf-image-fit').value = p.image_fit || 'cover';
     qs('#pf-status').value = p.status;
+    qs('#pf-rank').value = p.rank || 'center';
     qs('#pf-featured').checked = !!p.featured;
   } else {
     qs('#product-modal-title').textContent = 'Add Product';
@@ -1023,6 +1042,7 @@ function openProductModal(id){
     PF_IMAGES = [];
     qs('#pf-image-fit').value = 'cover';
     qs('#pf-status').value = 'active';
+    qs('#pf-rank').value = 'center';
     qs('#pf-featured').checked = false;
   }
   renderProductGallery();
@@ -1086,6 +1106,7 @@ async function saveProduct(){
     technique: qs('#pf-technique').value,
     price, mrp, stock,
     status: qs('#pf-status').value,
+    rank: qs('#pf-rank').value,
     featured: qs('#pf-featured').checked,
     img: images[0],
     images,
@@ -1548,7 +1569,53 @@ window.closeFounderModal = closeFounderModal;
 window.saveFounder = saveFounder;
 window.deleteFounder = deleteFounder;
 
+/* ---------- Shared photo-or-video preview/upload helper ----------
+   Used anywhere a single media slot (hero, artisan, founder) can be
+   either an image or a video: two overlaid preview elements, toggled
+   by mistiData.isVideoUrl on the current URL. */
+function updateMediaPreview(urlInputId, imgPreviewId, videoPreviewId){
+  const url = qs('#'+urlInputId).value.trim();
+  const imgEl = qs('#'+imgPreviewId);
+  const videoEl = qs('#'+videoPreviewId);
+  if(!url){ imgEl.classList.add('hidden'); videoEl.classList.add('hidden'); return; }
+  if(mistiData.isVideoUrl(url)){
+    videoEl.src = url; videoEl.classList.remove('hidden');
+    imgEl.classList.add('hidden');
+  } else {
+    imgEl.src = url; imgEl.classList.remove('hidden');
+    videoEl.classList.add('hidden');
+  }
+}
+async function handleMediaUpload(file, folder, urlInputId, imgPreviewId, videoPreviewId, statusId, wrapId, barId){
+  if(!file) return;
+  const statusEl = qs('#'+statusId);
+  const wrap = qs('#'+wrapId);
+  const bar = qs('#'+barId);
+  wrap.classList.remove('hidden');
+  bar.style.width = '0%';
+  statusEl.textContent = 'Uploading…';
+  try{
+    const url = await mistiData.uploadImage(file, folder, function(pct){ bar.style.width = pct + '%'; });
+    qs('#'+urlInputId).value = url;
+    updateMediaPreview(urlInputId, imgPreviewId, videoPreviewId);
+    statusEl.textContent = 'Uploaded ✓';
+    setTimeout(()=>{ wrap.classList.add('hidden'); statusEl.textContent = ''; }, 1500);
+  }catch(e){
+    console.error('mistiCRAFT media upload error', e);
+    statusEl.textContent = 'Upload failed — check your connection and try again.';
+    wrap.classList.add('hidden');
+  }
+}
+
 /* ---------- Store settings ---------- */
+function updateHeroMediaPreview(){
+  updateMediaPreview('set-hero-media-url', 'set-hero-media-preview-img', 'set-hero-media-preview-video');
+}
+async function handleHeroMediaUpload(file){
+  await handleMediaUpload(file, 'hero-media', 'set-hero-media-url', 'set-hero-media-preview-img', 'set-hero-media-preview-video', 'set-hero-media-upload-status', 'set-hero-media-upload-progress-wrap', 'set-hero-media-upload-progress');
+}
+window.updateHeroMediaPreview = updateHeroMediaPreview;
+window.handleHeroMediaUpload = handleHeroMediaUpload;
 async function saveStoreSettings(){
   const status = qs('#settings-save-status');
   const patch = {
@@ -1557,7 +1624,8 @@ async function saveStoreSettings(){
     store_phone: qs('#set-store-phone').value.trim(),
     default_transporter: qs('#set-default-transporter').value.trim(),
     upi_id: qs('#set-upi-id').value.trim(),
-    upi_payee_name: qs('#set-upi-payee-name').value.trim()
+    upi_payee_name: qs('#set-upi-payee-name').value.trim(),
+    hero_media_url: qs('#set-hero-media-url').value.trim()
   };
   const ok = await mistiData.saveSettings(patch);
   status.textContent = ok ? 'Saved!' : 'Could not save — check your connection';
@@ -1573,6 +1641,8 @@ function hydrateSettingsForm(s){
   qs('#set-default-transporter').value = s.default_transporter || '';
   qs('#set-upi-id').value = s.upi_id || '';
   qs('#set-upi-payee-name').value = s.upi_payee_name || '';
+  qs('#set-hero-media-url').value = s.hero_media_url || '';
+  updateHeroMediaPreview();
 }
 
 /* ---------- Order logistics modal ---------- */

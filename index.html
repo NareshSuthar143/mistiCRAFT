@@ -88,8 +88,6 @@ body{ -webkit-font-smoothing:antialiased; }
 .modal-panel{ transition:opacity .35s ease, transform .4s var(--ease); }
 .modal-backdrop{ transition:opacity .35s ease; }
 
-.viewer-360{ perspective:1200px; touch-action:none; }
-.viewer-360-inner{ transform-style:preserve-3d; will-change:transform; }
 .shimmer-sweep{ background:linear-gradient(75deg,transparent 42%,rgba(255,255,255,.6) 50%,transparent 58%); mix-blend-mode:overlay; }
 
 .ornament{ color:#c5a059; }
@@ -124,11 +122,6 @@ details.acc[open] .acc-chevron{ transform:rotate(180deg); }
   }
   #preloader{ transition:opacity .25s ease; }
 }
-
-
-.teaser-spin{ animation: teaserSpin 9s linear infinite; }
-@keyframes teaserSpin{ from{ transform:rotateY(0deg);} to{ transform:rotateY(360deg);} }
-@media (prefers-reduced-motion: reduce){ .teaser-spin{ animation:none; } }
 
 </style>
 </head>
@@ -201,8 +194,8 @@ details.acc[open] .acc-chevron{ transform:rotate(180deg); }
 <main>
 <!-- Hero -->
 <section class="relative h-[92vh] min-h-[560px] max-h-[860px] flex items-end overflow-hidden">
-<div class="absolute inset-0 z-0">
-<img src="https://lh3.googleusercontent.com/aida-public/AB6AXuDdj_FDmLCyLkXranxIIvcxfQJMBIlVAyPGm4K_xQLXNITw0sXYnW-R0tEKK1rhfNnfHIJ385o9q3qj1BPsDOa679rJqCUZdiIXkYxceb0iMb_JRhX8ojrxSEnXYL6tCsEQF-rt6KxVYiC-NlLvdUm1Bk-qOrVJfLcvw1LtFXGbxzdvv_2BRxNAi6LxqatM0bELTHhiSyPMREc2zWQcbwmWQtI6KGxeEMC6CFXV-xnD9nxyFpLG0_ceP0qt8ppicexwI-SGSrtrG5oI" alt="" class="w-full h-full object-cover ken-burns"/>
+<div class="absolute inset-0 z-0" id="hero-media">
+<img src="https://lh3.googleusercontent.com/aida-public/AB6AXuDdj_FDmLCyLkXranxIIvcxfQJMBIlVAyPGm4K_xQLXNITw0sXYnW-R0tEKK1rhfNnfHIJ385o9q3qj1BPsDOa679rJqCUZdiIXkYxceb0iMb_JRhX8ojrxSEnXYL6tCsEQF-rt6KxVYiC-NlLvdUm1Bk-qOrVJfLcvw1LtFXGbxzdvv_2BRxNAi6LxqatM0bELTHhiSyPMREc2zWQcbwmWQtI6KGxeEMC6CFXV-xnD9nxyFpLG0_ceP0qt8ppicexwI-SGSrtrG5oI" alt="" id="hero-media-el" class="w-full h-full object-cover ken-burns"/>
 <div class="absolute inset-0 bg-gradient-to-t from-on-surface/80 via-on-surface/25 to-on-surface/10"></div>
 </div>
 <div class="relative z-10 w-full max-w-[1280px] mx-auto px-container-margin pb-16 md:pb-24">
@@ -259,30 +252,6 @@ details.acc[open] .acc-chevron{ transform:rotate(180deg); }
 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-gutter" id="featured-grid">
 </div>
 <a href="shop.html" class="font-label-md text-label-md text-secondary border-b border-secondary pb-1 hover:text-primary hover:border-primary transition-colors mt-8 inline-block sm:hidden">View All Products</a>
-</section>
-
-<!-- Signature 360 teaser -->
-<section class="bg-surface-container my-8 md:my-16">
-<div class="max-w-[1280px] mx-auto px-container-margin py-16 md:py-20 grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
-<div data-reveal>
-<span class="font-label-sm text-label-sm uppercase text-primary tracking-[0.2em]">Signature Experience</span>
-<h2 class="font-headline-lg text-headline-lg mt-2 mb-5">Examine Every Thread</h2>
-<p class="font-body-md text-body-md text-on-surface-variant max-w-md mb-8">Our interactive 360&deg; viewer lets you rotate each piece by hand &mdash; studying the Zardozi threadwork the way our artisans do, stitch by stitch.</p>
-<a href="product.html#360-preview" class="btn inline-flex items-center gap-2 border border-primary text-primary hover:bg-primary hover:text-white font-label-md text-label-md uppercase tracking-widest px-8 py-3.5">
-<span class="material-symbols-outlined text-[20px]">sync_alt</span> Try the 360&deg; Viewer
-</a>
-</div>
-<div class="flex justify-center" data-reveal style="--d:0.15s">
-<div class="viewer-360 relative w-64 h-64 md:w-80 md:h-80 rounded-full bg-surface-container-lowest border border-outline-variant/30 overflow-hidden flex items-center justify-center shadow-lg">
-<div class="teaser-spin w-full h-full flex items-center justify-center">
-<img src="https://lh3.googleusercontent.com/aida-public/AB6AXuCoVlO2DhMeEHXIoKLgh02B2b5f95jtuMN3tocXkfrNQXDuvv1foZstdiFphilfQgbqR-6pd79cegW8g54-MVYbIHAytUSUd3V-CDtrdktsk1KXOpSdc76zPkKcpmGf2XuItQHHnPv2pEDnQHQ1iSBzAcO9aJFnKG3jBsvvyOLKh72tGd765MNxYHdDyANkuhy41O_GDEjFzVs5Kzz-3OVuJrzueawQqG6qIycOkJqEU_tTE_lKXVJVTorsB_xmN2gbS7njsX2aqSnI" alt="Mayur Embroidered Tee, 360 degree preview" class="w-full h-full object-contain opacity-90"/>
-</div>
-<div class="absolute inset-0 flex items-center justify-center pointer-events-none">
-<div class="bg-background/50 backdrop-blur-sm p-3 rounded-full"><span class="material-symbols-outlined text-primary scale-125">sync_alt</span></div>
-</div>
-</div>
-</div>
-</div>
 </section>
 
 <!-- Artisan spotlight -->
@@ -577,7 +546,7 @@ function featuredCardHTML(p, index){
     ? '<img class="absolute inset-0 w-full h-full ' + fitClass + ' opacity-0 group-hover:opacity-100 transition-opacity duration-500" loading="lazy" alt="" src="' + esc(images[1]) + '"/>'
     : '';
   return '<div class="group cursor-pointer" data-reveal style="--d:' + (0.10 * index).toFixed(2) + 's">'
-  + '<a href="product.html" class="block">'
+  + '<a href="product.html?id=' + encodeURIComponent(p.id) + '" class="block">'
   + '<div class="relative aspect-[4/5] overflow-hidden bg-surface-container-low border border-outline-variant/10 mb-4">'
   + '<img class="w-full h-full ' + fitClass + ' transition-transform duration-700 group-hover:scale-110" loading="lazy" alt="' + esc(p.name) + '" src="' + esc(images[0]) + '"/>'
   + hoverImg
@@ -592,7 +561,7 @@ function featuredCardHTML(p, index){
 async function renderFeaturedGrid(){
   const grid = qs('#featured-grid');
   if(!grid) return;
-  const products = await mistiData.loadData(mistiData.KEYS.products, mistiData.DEFAULT_PRODUCTS);
+  const products = mistiData.sortByRank(await mistiData.loadData(mistiData.KEYS.products, mistiData.DEFAULT_PRODUCTS));
   const featured = products.filter(p=> p.featured).slice(0,4);
   const chosen = featured.length ? featured : products.slice(0,4);
   grid.innerHTML = chosen.map(featuredCardHTML).join('');
@@ -609,6 +578,23 @@ async function renderFeaturedGrid(){
   }
 }
 mistiData.subscribe(mistiData.KEYS.products, renderFeaturedGrid);
+
+/* ---------- Hero media (photo or video, set from Admin > Store Settings) ---------- */
+function renderHeroMedia(url){
+  if(!url) return; // keep the built-in default photo
+  const current = qs('#hero-media-el');
+  if(!current) return;
+  const isVideo = mistiData.isVideoUrl(url);
+  if(current.tagName === (isVideo ? 'VIDEO' : 'IMG') && current.getAttribute('src') === url) return;
+  const el = document.createElement(isVideo ? 'video' : 'img');
+  el.id = 'hero-media-el';
+  el.className = current.className;
+  if(isVideo){ el.autoplay = true; el.muted = true; el.loop = true; el.playsInline = true; }
+  else { el.alt = ''; }
+  el.src = url;
+  current.replaceWith(el);
+}
+mistiData.subscribeSettings(function(s){ renderHeroMedia(s && s.hero_media_url); });
 
 
 </script>

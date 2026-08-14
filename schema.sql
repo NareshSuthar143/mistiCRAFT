@@ -282,3 +282,15 @@ alter publication supabase_realtime add table settings;
 alter table products add column if not exists images text[] not null default '{}';
 alter table products add column if not exists image_fit text not null default 'cover';
 
+-- ---------- Shop sort rank ----------
+-- A coarse priority tier admins set per product to control default
+-- ("Featured") ordering in the shop grid: top < center < bottom.
+alter table products add column if not exists rank text not null default 'center';
+alter table products drop constraint if exists products_rank_check;
+alter table products add constraint products_rank_check check (rank in ('top','center','bottom'));
+
+-- ---------- Homepage hero: photo or video ----------
+-- A plain URL; the storefront decides photo vs. video by file extension
+-- (see mistiData.isVideoUrl), so no separate "type" column is needed.
+alter table settings add column if not exists hero_media_url text;
+
