@@ -66,6 +66,9 @@ body{ -webkit-font-smoothing:antialiased; }
 .ken-burns{ animation:kenburns 22s ease-in-out infinite alternate; }
 @keyframes kenburns{ 0%{ transform:scale(1) translate(0,0);} 100%{ transform:scale(1.1) translate(-1.5%,-1.5%);} }
 
+.hero-slide{ position:absolute; inset:0; opacity:0; transition:opacity 1s var(--ease); }
+.hero-slide.is-active{ opacity:1; z-index:1; }
+
 .hero-enter > *{ opacity:0; transform:translateY(24px); animation:heroUp .9s var(--ease) forwards; }
 .hero-enter > *:nth-child(1){ animation-delay:.15s; }
 .hero-enter > *:nth-child(2){ animation-delay:.34s; }
@@ -195,7 +198,9 @@ details.acc[open] .acc-chevron{ transform:rotate(180deg); }
 <!-- Hero -->
 <section class="relative h-[92vh] min-h-[560px] max-h-[860px] flex items-end overflow-hidden">
 <div class="absolute inset-0 z-0" id="hero-media">
-<img src="https://lh3.googleusercontent.com/aida-public/AB6AXuDdj_FDmLCyLkXranxIIvcxfQJMBIlVAyPGm4K_xQLXNITw0sXYnW-R0tEKK1rhfNnfHIJ385o9q3qj1BPsDOa679rJqCUZdiIXkYxceb0iMb_JRhX8ojrxSEnXYL6tCsEQF-rt6KxVYiC-NlLvdUm1Bk-qOrVJfLcvw1LtFXGbxzdvv_2BRxNAi6LxqatM0bELTHhiSyPMREc2zWQcbwmWQtI6KGxeEMC6CFXV-xnD9nxyFpLG0_ceP0qt8ppicexwI-SGSrtrG5oI" alt="" id="hero-media-el" class="w-full h-full object-cover ken-burns"/>
+<div id="hero-media-track" class="absolute inset-0">
+<img src="https://lh3.googleusercontent.com/aida-public/AB6AXuDdj_FDmLCyLkXranxIIvcxfQJMBIlVAyPGm4K_xQLXNITw0sXYnW-R0tEKK1rhfNnfHIJ385o9q3qj1BPsDOa679rJqCUZdiIXkYxceb0iMb_JRhX8ojrxSEnXYL6tCsEQF-rt6KxVYiC-NlLvdUm1Bk-qOrVJfLcvw1LtFXGbxzdvv_2BRxNAi6LxqatM0bELTHhiSyPMREc2zWQcbwmWQtI6KGxeEMC6CFXV-xnD9nxyFpLG0_ceP0qt8ppicexwI-SGSrtrG5oI" alt="" class="hero-slide is-active w-full h-full object-cover ken-burns"/>
+</div>
 <div class="absolute inset-0 bg-gradient-to-t from-on-surface/80 via-on-surface/25 to-on-surface/10"></div>
 </div>
 <div class="relative z-10 w-full max-w-[1280px] mx-auto px-container-margin pb-16 md:pb-24">
@@ -579,22 +584,65 @@ async function renderFeaturedGrid(){
 }
 mistiData.subscribe(mistiData.KEYS.products, renderFeaturedGrid);
 
-/* ---------- Hero media (photo or video, set from Admin > Store Settings) ---------- */
-function renderHeroMedia(url){
-  if(!url) return; // keep the built-in default photo
-  const current = qs('#hero-media-el');
-  if(!current) return;
-  const isVideo = mistiData.isVideoUrl(url);
-  if(current.tagName === (isVideo ? 'VIDEO' : 'IMG') && current.getAttribute('src') === url) return;
-  const el = document.createElement(isVideo ? 'video' : 'img');
-  el.id = 'hero-media-el';
-  el.className = current.className;
-  if(isVideo){ el.autoplay = true; el.muted = true; el.loop = true; el.playsInline = true; }
-  else { el.alt = ''; }
-  el.src = url;
-  current.replaceWith(el);
+/* ---------- Hero media (photos/videos, set from Admin > Store Settings) ----------
+   Cycles through every configured item: photos hold for a few seconds,
+   videos play through once, then it crossfades to the next slide. */
+const HERO_PHOTO_DURATION = 6000;
+const HERO_VIDEO_FALLBACK_DURATION = 20000;
+let heroIndex = 0;
+let heroTimer = null;
+function showHeroSlide(i){
+  const track = qs('#hero-media-track');
+  if(!track) return;
+  const slides = qsa('.hero-slide', track);
+  if(!slides.length) return;
+  clearTimeout(heroTimer);
+  slides.forEach(function(s, idx){
+    s.classList.toggle('is-active', idx === i);
+    if(s.tagName === 'VIDEO' && idx !== i){ s.pause(); }
+  });
+  heroIndex = i;
+  if(slides.length < 2) return;
+  const active = slides[i];
+  if(active.tagName === 'VIDEO'){
+    active.currentTime = 0;
+    active.play().catch(function(){});
+    active.onended = advanceHeroSlide;
+    heroTimer = setTimeout(advanceHeroSlide, HERO_VIDEO_FALLBACK_DURATION);
+  } else if(!reducedMotion){
+    heroTimer = setTimeout(advanceHeroSlide, HERO_PHOTO_DURATION);
+  }
 }
-mistiData.subscribeSettings(function(s){ renderHeroMedia(s && s.hero_media_url); });
+function advanceHeroSlide(){
+  const track = qs('#hero-media-track');
+  const count = qsa('.hero-slide', track).length;
+  if(count < 2) return;
+  showHeroSlide((heroIndex + 1) % count);
+}
+function renderHeroMedia(urls){
+  if(!urls || !urls.length) return; // keep the built-in default photo
+  const track = qs('#hero-media-track');
+  if(!track) return;
+  const sig = urls.join('|');
+  if(track.dataset.sig === sig) return;
+  track.dataset.sig = sig;
+  clearTimeout(heroTimer);
+  track.innerHTML = '';
+  urls.forEach(function(url, i){
+    const isVideo = mistiData.isVideoUrl(url);
+    const el = document.createElement(isVideo ? 'video' : 'img');
+    el.className = 'hero-slide w-full h-full object-cover ken-burns';
+    if(isVideo){ el.autoplay = true; el.muted = true; el.playsInline = true; }
+    else { el.alt = ''; }
+    el.src = url;
+    track.appendChild(el);
+  });
+  showHeroSlide(0);
+}
+mistiData.subscribeSettings(function(s){
+  const list = (s && s.hero_media && s.hero_media.length) ? s.hero_media : ((s && s.hero_media_url) ? [s.hero_media_url] : null);
+  renderHeroMedia(list);
+});
 
 
 </script>
