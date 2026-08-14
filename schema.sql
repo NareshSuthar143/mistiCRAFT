@@ -15,7 +15,9 @@ create table if not exists products (
   stock integer not null default 0,
   status text not null default 'active',
   featured boolean not null default false,
-  img text
+  img text,
+  images text[] not null default '{}',
+  image_fit text not null default 'cover'
 );
 
 create table if not exists artisans (
@@ -272,4 +274,11 @@ create policy "settings public read" on settings for select using (true);
 drop policy if exists "settings admin write" on settings;
 create policy "settings admin write" on settings for all using (is_admin()) with check (is_admin());
 alter publication supabase_realtime add table settings;
+
+-- ---------- Product image gallery + display style ----------
+-- `img` stays the cover photo (kept in sync by the admin app);
+-- `images` holds the full gallery order, `image_fit` picks how it's
+-- cropped on the storefront (cover = fill/crop, contain = fit whole photo).
+alter table products add column if not exists images text[] not null default '{}';
+alter table products add column if not exists image_fit text not null default 'cover';
 

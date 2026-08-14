@@ -188,21 +188,13 @@ details.acc[open] .acc-chevron{ transform:rotate(180deg); }
 <!-- Left Column: Gallery -->
 <div class="lg:col-span-7 flex flex-col gap-6">
 <div class="relative aspect-[4/5] bg-surface-container-low overflow-hidden group">
-<img class="w-full h-full object-cover transition-opacity duration-300 group-hover:scale-105" style="transition-property:opacity,transform;" alt="Mayur Embroidered Tee" id="main-image" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBT6vqvmgHyoChKo51K9hE-5z6gg9p5dh9GeC3QF_PghB0C2vz8z2ZhaUP0ZeMITwWIfXbs4J8yDGIBZ6GrF-iefyIuR75YtKvAht6o_Vidh4n1hmct-WSww_sw41bBhpIC2EyW_bKJL-KL819Yi-VMFAlnpaqOlzvxYe6GSkUh5LMvGgbD3F3aGDoGbyEk7v36ugh1_z6gL_yo11EknN8EvTBMnqAXWbGxH2q3ctEekg1qYgmkR2OK4TZDC2KH5DfykJ-E2hp4zypG"/>
+<img class="w-full h-full object-cover transition-opacity duration-300 cursor-zoom-in" style="transition-property:opacity;" alt="Mayur Embroidered Tee" id="main-image" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBT6vqvmgHyoChKo51K9hE-5z6gg9p5dh9GeC3QF_PghB0C2vz8z2ZhaUP0ZeMITwWIfXbs4J8yDGIBZ6GrF-iefyIuR75YtKvAht6o_Vidh4n1hmct-WSww_sw41bBhpIC2EyW_bKJL-KL819Yi-VMFAlnpaqOlzvxYe6GSkUh5LMvGgbD3F3aGDoGbyEk7v36ugh1_z6gL_yo11EknN8EvTBMnqAXWbGxH2q3ctEekg1qYgmkR2OK4TZDC2KH5DfykJ-E2hp4zypG" onclick="openLightbox()"/>
 <div class="absolute top-4 left-4 bg-primary text-on-primary px-3 py-1 font-label-sm uppercase tracking-widest">Limited Edition</div>
+<button type="button" onclick="openLightbox()" class="absolute bottom-4 right-4 bg-surface/80 backdrop-blur-sm p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-surface" aria-label="Zoom product photo"><span class="material-symbols-outlined text-primary">zoom_in</span></button>
 </div>
-<div class="grid grid-cols-5 gap-4">
-<button class="thumb aspect-square bg-surface-container-high border-2 border-primary overflow-hidden" onclick="changeImage(this)" data-full="https://lh3.googleusercontent.com/aida-public/AB6AXuBT6vqvmgHyoChKo51K9hE-5z6gg9p5dh9GeC3QF_PghB0C2vz8z2ZhaUP0ZeMITwWIfXbs4J8yDGIBZ6GrF-iefyIuR75YtKvAht6o_Vidh4n1hmct-WSww_sw41bBhpIC2EyW_bKJL-KL819Yi-VMFAlnpaqOlzvxYe6GSkUh5LMvGgbD3F3aGDoGbyEk7v36ugh1_z6gL_yo11EknN8EvTBMnqAXWbGxH2q3ctEekg1qYgmkR2OK4TZDC2KH5DfykJ-E2hp4zypG" aria-label="View image 1">
+<div id="gallery-thumbs" class="grid grid-cols-5 gap-4">
+<button class="thumb aspect-square bg-surface-container-high border-2 border-primary overflow-hidden" onclick="changeImage(this,0)" data-full="https://lh3.googleusercontent.com/aida-public/AB6AXuBT6vqvmgHyoChKo51K9hE-5z6gg9p5dh9GeC3QF_PghB0C2vz8z2ZhaUP0ZeMITwWIfXbs4J8yDGIBZ6GrF-iefyIuR75YtKvAht6o_Vidh4n1hmct-WSww_sw41bBhpIC2EyW_bKJL-KL819Yi-VMFAlnpaqOlzvxYe6GSkUh5LMvGgbD3F3aGDoGbyEk7v36ugh1_z6gL_yo11EknN8EvTBMnqAXWbGxH2q3ctEekg1qYgmkR2OK4TZDC2KH5DfykJ-E2hp4zypG" aria-label="View image 1">
 <img class="w-full h-full object-cover" alt="" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBT6vqvmgHyoChKo51K9hE-5z6gg9p5dh9GeC3QF_PghB0C2vz8z2ZhaUP0ZeMITwWIfXbs4J8yDGIBZ6GrF-iefyIuR75YtKvAht6o_Vidh4n1hmct-WSww_sw41bBhpIC2EyW_bKJL-KL819Yi-VMFAlnpaqOlzvxYe6GSkUh5LMvGgbD3F3aGDoGbyEk7v36ugh1_z6gL_yo11EknN8EvTBMnqAXWbGxH2q3ctEekg1qYgmkR2OK4TZDC2KH5DfykJ-E2hp4zypG"/>
-</button>
-<button class="thumb aspect-square bg-surface-container-high border-2 border-transparent overflow-hidden" onclick="changeImage(this)" data-full="https://lh3.googleusercontent.com/aida-public/AB6AXuCx_25pmjVneI69VnOrkvNYDctuwqz_8n6ROlBaSomOG9pvsuQTxgeL8s_NzSJCxfGY4KUWZJGZhWxT1lB4TWiACUn-6XG-8HtGi94HHoHgvgFUYUiHIGWIQWRkw6M8EiqHHRPAPi3dKka1H1Cnl17xUZd4Q7VhUsIVLEH-UMoX5f_BFXmU5uq1KKNkEisOrwzB3aCAIkH7YrbIa0LdeCeTopL2iO-VaDd5gCLz9YnA5Ami5RednCL_981yltozh4GOwpslBU0GZLas" aria-label="View image 2">
-<img class="w-full h-full object-cover" alt="" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCx_25pmjVneI69VnOrkvNYDctuwqz_8n6ROlBaSomOG9pvsuQTxgeL8s_NzSJCxfGY4KUWZJGZhWxT1lB4TWiACUn-6XG-8HtGi94HHoHgvgFUYUiHIGWIQWRkw6M8EiqHHRPAPi3dKka1H1Cnl17xUZd4Q7VhUsIVLEH-UMoX5f_BFXmU5uq1KKNkEisOrwzB3aCAIkH7YrbIa0LdeCeTopL2iO-VaDd5gCLz9YnA5Ami5RednCL_981yltozh4GOwpslBU0GZLas"/>
-</button>
-<button class="thumb aspect-square bg-surface-container-high border-2 border-transparent overflow-hidden" onclick="changeImage(this)" data-full="https://lh3.googleusercontent.com/aida-public/AB6AXuCkf22t8PBzXyBKh8ETO25S7Dkii9EYsS1dZfItvBto_efIw8lKd6HqUdzKTtgt5zh8Wk4uMbw3UoK6QN1iJGNgnBiCElSJW6Mhe36YbpGkbTMzvLUAJYEbPjzITgHseCdXSG49x2w6XE3Ddpdvp4N2k3y1aQ0oCKX6C1xYmPAgMbzXf-b7zyVZBwnh-0a0zfVfu9pigtU2UGHw0KCiCYtWgcKFHGHdfJ4s6DT5on6nmdjK2osiPExEYFtWfVpMPr3K2btey7WuX6r5" aria-label="View image 3">
-<img class="w-full h-full object-cover" alt="" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCkf22t8PBzXyBKh8ETO25S7Dkii9EYsS1dZfItvBto_efIw8lKd6HqUdzKTtgt5zh8Wk4uMbw3UoK6QN1iJGNgnBiCElSJW6Mhe36YbpGkbTMzvLUAJYEbPjzITgHseCdXSG49x2w6XE3Ddpdvp4N2k3y1aQ0oCKX6C1xYmPAgMbzXf-b7zyVZBwnh-0a0zfVfu9pigtU2UGHw0KCiCYtWgcKFHGHdfJ4s6DT5on6nmdjK2osiPExEYFtWfVpMPr3K2btey7WuX6r5"/>
-</button>
-<button class="thumb aspect-square bg-surface-container-high border-2 border-transparent overflow-hidden" onclick="changeImage(this)" data-full="https://lh3.googleusercontent.com/aida-public/AB6AXuByQJ5zS7rlfW59wXpunMUmL05WNB0E7Nsh_fHB9guMdlBE3inHqgRj2GjBD8BxkfJvOwF3Bnva6BZWsHRT3UXcgF00L5DRniDL4fumOi9zOBWmzjCcxWzEqLZLfcwy2UAF8x5XtX95ndvuskiRqimS86ZzfN4HNVCWE5cJAAXEy6F4Qngt8lLJnq9H9-txesDEU69loTv5dh235SGudF9ZfHpppa4puFdl3yv3nwlXNhomKIhWvNmEznjh5aXqZbINaFzBc3t6Cc6C" aria-label="View image 4">
-<img class="w-full h-full object-cover" alt="" src="https://lh3.googleusercontent.com/aida-public/AB6AXuByQJ5zS7rlfW59wXpunMUmL05WNB0E7Nsh_fHB9guMdlBE3inHqgRj2GjBD8BxkfJvOwF3Bnva6BZWsHRT3UXcgF00L5DRniDL4fumOi9zOBWmzjCcxWzEqLZLfcwy2UAF8x5XtX95ndvuskiRqimS86ZzfN4HNVCWE5cJAAXEy6F4Qngt8lLJnq9H9-txesDEU69loTv5dh235SGudF9ZfHpppa4puFdl3yv3nwlXNhomKIhWvNmEznjh5aXqZbINaFzBc3t6Cc6C"/>
 </button>
 <button class="aspect-square bg-surface-container-high border-2 border-transparent flex flex-col items-center justify-center cursor-pointer hover:bg-surface-container-highest transition-colors" onclick="document.getElementById('360-preview').scrollIntoView({behavior:'smooth'})">
 <span class="material-symbols-outlined text-primary mb-1">360</span>
@@ -422,6 +414,17 @@ details.acc[open] .acc-chevron{ transform:rotate(180deg); }
 </footer>
 
 <div id="toast-region" aria-live="polite"></div>
+
+<!-- ============ IMAGE ZOOM / LIGHTBOX ============ -->
+<div id="image-lightbox" class="fixed inset-0 z-[110] hidden items-center justify-center p-4" role="dialog" aria-modal="true" aria-label="Zoomed product photo">
+<div class="absolute inset-0 bg-on-surface/85 backdrop-blur-sm" onclick="closeLightbox()"></div>
+<button type="button" onclick="closeLightbox()" class="absolute top-4 right-4 md:top-8 md:right-8 z-10 text-white hover:text-primary transition-colors" aria-label="Close zoomed photo"><span class="material-symbols-outlined text-3xl">close</span></button>
+<button type="button" onclick="lightboxNav(-1)" id="lightbox-prev" class="absolute left-2 md:left-8 top-1/2 -translate-y-1/2 z-10 text-white hover:text-primary transition-colors bg-on-surface/30 rounded-full p-2" aria-label="Previous photo"><span class="material-symbols-outlined text-3xl">chevron_left</span></button>
+<img id="lightbox-image" src="" alt="" class="relative z-0 max-w-[90vw] max-h-[85vh] object-contain select-none"/>
+<button type="button" onclick="lightboxNav(1)" id="lightbox-next" class="absolute right-2 md:right-8 top-1/2 -translate-y-1/2 z-10 text-white hover:text-primary transition-colors bg-on-surface/30 rounded-full p-2" aria-label="Next photo"><span class="material-symbols-outlined text-3xl">chevron_right</span></button>
+<span id="lightbox-counter" class="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 text-white/80 font-label-sm text-label-sm"></span>
+</div>
+
 <script>
 const qs = (s,el=document)=>el.querySelector(s);
 const qsa = (s,el=document)=>Array.from(el.querySelectorAll(s));
@@ -577,7 +580,25 @@ if(params.get('q') && typeof applySearchQuery === 'function'){
 
 
 /* ---------- Gallery ---------- */
-function changeImage(el){
+let GALLERY_IMAGES = [];
+let lightboxIndex = 0;
+
+function renderGallery(images){
+  const wrap = qs('#gallery-thumbs');
+  if(!wrap || !images.length) return;
+  const esc = (s)=> String(s).replace(/"/g,'&quot;');
+  wrap.innerHTML = images.map(function(url, i){
+    return '<button class="thumb aspect-square bg-surface-container-high border-2 ' + (i === 0 ? 'border-primary' : 'border-transparent') + ' overflow-hidden" onclick="changeImage(this,' + i + ')" data-full="' + esc(url) + '" aria-label="View image ' + (i + 1) + '">'
+      + '<img class="w-full h-full object-cover" alt="" src="' + esc(url) + '"/>'
+      + '</button>';
+  }).join('')
+  + '<button class="aspect-square bg-surface-container-high border-2 border-transparent flex flex-col items-center justify-center cursor-pointer hover:bg-surface-container-highest transition-colors" onclick="document.getElementById(\'360-preview\').scrollIntoView({behavior:\'smooth\'})">'
+  + '<span class="material-symbols-outlined text-primary mb-1">360</span>'
+  + '<span class="font-label-sm text-[10px] uppercase">360&deg; View</span>'
+  + '</button>';
+}
+
+function changeImage(el, idx){
   const mainImg = qs('#main-image');
   mainImg.style.opacity = 0;
   setTimeout(()=>{
@@ -588,8 +609,48 @@ function changeImage(el){
   qsa('.thumb').forEach(b=> b.classList.add('border-transparent'));
   el.classList.remove('border-transparent');
   el.classList.add('border-primary');
+  if(typeof idx === 'number') lightboxIndex = idx;
 }
 window.changeImage = changeImage;
+
+/* ---------- Lightbox (zoom) ---------- */
+function updateLightboxImage(){
+  qs('#lightbox-image').src = GALLERY_IMAGES[lightboxIndex];
+  qs('#lightbox-counter').textContent = (lightboxIndex + 1) + ' / ' + GALLERY_IMAGES.length;
+  const multi = GALLERY_IMAGES.length > 1;
+  qs('#lightbox-prev').classList.toggle('hidden', !multi);
+  qs('#lightbox-next').classList.toggle('hidden', !multi);
+}
+function openLightbox(){
+  if(!GALLERY_IMAGES.length) return;
+  updateLightboxImage();
+  const modal = qs('#image-lightbox');
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+  document.body.style.overflow = 'hidden';
+}
+function closeLightbox(){
+  const modal = qs('#image-lightbox');
+  modal.classList.remove('flex');
+  modal.classList.add('hidden');
+  document.body.style.overflow = '';
+}
+function lightboxNav(dir){
+  if(GALLERY_IMAGES.length < 2) return;
+  lightboxIndex = (lightboxIndex + dir + GALLERY_IMAGES.length) % GALLERY_IMAGES.length;
+  updateLightboxImage();
+  const thumb = qsa('.thumb')[lightboxIndex];
+  if(thumb) changeImage(thumb, lightboxIndex);
+}
+window.openLightbox = openLightbox;
+window.closeLightbox = closeLightbox;
+window.lightboxNav = lightboxNav;
+document.addEventListener('keydown', function(e){
+  if(qs('#image-lightbox').classList.contains('hidden')) return;
+  if(e.key === 'Escape') closeLightbox();
+  if(e.key === 'ArrowLeft') lightboxNav(-1);
+  if(e.key === 'ArrowRight') lightboxNav(1);
+});
 
 /* ---------- Color select ---------- */
 function selectColor(btn){
@@ -734,6 +795,13 @@ async function hydrateProductHero(products){
   const p = products.find(x=> x.id === CURRENT_PRODUCT_ID);
   if(!p) return;
   CURRENT_PRODUCT = p;
+  GALLERY_IMAGES = (p.images && p.images.length) ? p.images : (p.img ? [p.img] : []);
+  lightboxIndex = 0;
+  renderGallery(GALLERY_IMAGES);
+  const mainImg = qs('#main-image');
+  mainImg.classList.remove('object-cover','object-contain');
+  mainImg.classList.add(p.image_fit === 'contain' ? 'object-contain' : 'object-cover');
+  if(GALLERY_IMAGES[0]){ mainImg.src = GALLERY_IMAGES[0]; mainImg.style.opacity = 1; }
   const priceEl = qs('#unit-price');
   priceEl.dataset.price = p.price;
   priceEl.textContent = mistiData.formatINR(p.price);
