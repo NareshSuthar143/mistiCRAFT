@@ -294,6 +294,16 @@ alter table products add constraint products_rank_check check (rank in ('top','c
 -- (see mistiData.isVideoUrl), so no separate "type" column is needed.
 alter table settings add column if not exists hero_media_url text;
 
+-- ---------- Homepage hero: multiple photos/videos ----------
+-- Ordered list of URLs the homepage hero cycles through (photo or video
+-- per-item, decided by extension via mistiData.isVideoUrl). Replaces the
+-- single hero_media_url column above, which is kept only so any existing
+-- single URL is carried forward into the array below.
+alter table settings add column if not exists hero_media text[] not null default '{}';
+update settings set hero_media = array[hero_media_url]
+  where hero_media_url is not null and hero_media_url <> ''
+  and coalesce(array_length(hero_media, 1), 0) = 0;
+
 -- Storage bucket for hero uploads — handleHeroMediaUpload() in admin.html
 -- uploads to 'hero-media', but no bucket by that name was ever created,
 -- so every hero upload failed with "Upload failed — check your connection".

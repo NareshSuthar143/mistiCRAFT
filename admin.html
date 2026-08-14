@@ -455,20 +455,19 @@ body[data-page="admin"]{ background:#fbf9f4; }
 <div class="field filled"><input id="set-upi-id" type="text" placeholder=" "/><label>UPI ID (VPA) — e.g. yourshop@okhdfcbank</label></div>
 <div class="field filled"><input id="set-upi-payee-name" type="text" placeholder=" "/><label>Payee Name (shown to customers)</label></div>
 <div class="mt-4">
-<p class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest mb-3">Homepage Hero — photo or video</p>
-<div class="field filled"><input id="set-hero-media-url" placeholder=" " oninput="updateHeroMediaPreview()"/><label>Hero Media URL</label></div>
-<div class="border border-dashed border-outline-variant rounded p-4 flex items-center gap-4">
-<img id="set-hero-media-preview-img" src="" alt="" class="w-16 h-16 object-cover rounded bg-surface-container-high hidden"/>
-<video id="set-hero-media-preview-video" src="" muted loop autoplay playsinline class="w-16 h-16 object-cover rounded bg-surface-container-high hidden"></video>
-<div class="flex-1 min-w-0">
-<label class="inline-flex items-center gap-2 cursor-pointer text-primary font-label-sm text-label-sm uppercase tracking-widest hover:underline">
-<span class="material-symbols-outlined text-[18px]">upload</span> Upload a photo or video instead
-<input type="file" id="set-hero-media-file" accept="image/*,video/*" class="hidden" onchange="handleHeroMediaUpload(this.files[0])"/>
+<p class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest mb-1">Homepage Hero — photos &amp; videos</p>
+<p class="font-label-sm text-label-sm text-on-surface-variant mb-3">Add as many as you like — the homepage cycles through them in order. The first one shows first.</p>
+<div id="hero-gallery" class="grid grid-cols-4 sm:grid-cols-5 gap-3 mb-3"></div>
+<div class="border border-dashed border-outline-variant rounded p-4 flex flex-col sm:flex-row sm:items-center gap-3">
+<label class="inline-flex items-center gap-2 cursor-pointer text-primary font-label-sm text-label-sm uppercase tracking-widest hover:underline flex-shrink-0">
+<span class="material-symbols-outlined text-[18px]">upload</span> Add photos/videos
+<input type="file" id="set-hero-media-file" accept="image/*,video/*" multiple class="hidden" onchange="handleHeroMediaUpload(this.files)"/>
 </label>
+<div class="field filled flex-1 min-w-[180px] !mt-0"><input id="set-hero-media-url" placeholder=" " onkeydown="if(event.key==='Enter'){event.preventDefault();addHeroMediaUrl();}"/><label>...or paste a photo/video URL</label></div>
+<button type="button" onclick="addHeroMediaUrl()" class="font-label-sm text-label-sm uppercase tracking-widest text-primary hover:underline px-2 py-3 flex-shrink-0">Add</button>
+</div>
 <div id="set-hero-media-upload-progress-wrap" class="hidden mt-2 h-1.5 bg-surface-container-high rounded-full overflow-hidden"><div id="set-hero-media-upload-progress" class="h-full bg-primary" style="width:0%"></div></div>
 <p id="set-hero-media-upload-status" class="font-label-sm text-label-sm text-on-surface-variant mt-1"></p>
-</div>
-</div>
 </div>
 <p id="settings-save-status" class="hidden font-label-sm text-label-sm text-primary mt-3"></p>
 <button type="submit" class="btn mt-6 bg-primary text-on-primary font-label-md text-label-md uppercase tracking-widest py-3.5 hover:opacity-90 transition-opacity w-fit px-8">Save Settings</button>
@@ -1569,53 +1568,80 @@ window.closeFounderModal = closeFounderModal;
 window.saveFounder = saveFounder;
 window.deleteFounder = deleteFounder;
 
-/* ---------- Shared photo-or-video preview/upload helper ----------
-   Used anywhere a single media slot (hero, artisan, founder) can be
-   either an image or a video: two overlaid preview elements, toggled
-   by mistiData.isVideoUrl on the current URL. */
-function updateMediaPreview(urlInputId, imgPreviewId, videoPreviewId){
-  const url = qs('#'+urlInputId).value.trim();
-  const imgEl = qs('#'+imgPreviewId);
-  const videoEl = qs('#'+videoPreviewId);
-  if(!url){ imgEl.classList.add('hidden'); videoEl.classList.add('hidden'); return; }
-  if(mistiData.isVideoUrl(url)){
-    videoEl.src = url; videoEl.classList.remove('hidden');
-    imgEl.classList.add('hidden');
-  } else {
-    imgEl.src = url; imgEl.classList.remove('hidden');
-    videoEl.classList.add('hidden');
+/* ---------- Hero media gallery (photos + videos, ordered) ---------- */
+let HERO_MEDIA = [];
+function renderHeroGallery(){
+  const wrap = qs('#hero-gallery');
+  if(!wrap) return;
+  if(!HERO_MEDIA.length){
+    wrap.innerHTML = '<p class="col-span-full font-label-sm text-label-sm text-on-surface-variant">No hero media yet — the homepage will show its built-in default photo.</p>';
+    return;
   }
+  wrap.innerHTML = HERO_MEDIA.map(function(url, i){
+    const isVideo = mistiData.isVideoUrl(url);
+    const media = isVideo
+      ? '<video src="' + esc(url) + '" muted class="w-full h-full object-cover"></video>'
+      : '<img src="' + esc(url) + '" alt="" class="w-full h-full object-cover"/>';
+    return '<div class="relative aspect-square bg-surface-container-high rounded overflow-hidden group/thumb border-2 ' + (i === 0 ? 'border-primary' : 'border-transparent') + '">'
+      + media
+      + (isVideo ? '<span class="absolute top-1 right-1 bg-on-surface/70 text-on-primary rounded p-0.5"><span class="material-symbols-outlined text-[14px] block">play_arrow</span></span>' : '')
+      + (i === 0 ? '<span class="absolute bottom-1 left-1 bg-primary text-on-primary text-[9px] font-bold uppercase px-1.5 py-0.5 rounded">First</span>' : '')
+      + '<div class="absolute inset-0 bg-on-surface/50 opacity-0 group-hover/thumb:opacity-100 transition-opacity flex items-center justify-center gap-1">'
+      + (i > 0 ? '<button type="button" onclick="moveHeroMedia(' + i + ',-1)" class="text-white p-1" aria-label="Move earlier"><span class="material-symbols-outlined text-[16px]">chevron_left</span></button>' : '')
+      + '<button type="button" onclick="removeHeroMedia(' + i + ')" class="text-white p-1" aria-label="Remove"><span class="material-symbols-outlined text-[16px]">close</span></button>'
+      + (i < HERO_MEDIA.length - 1 ? '<button type="button" onclick="moveHeroMedia(' + i + ',1)" class="text-white p-1" aria-label="Move later"><span class="material-symbols-outlined text-[16px]">chevron_right</span></button>' : '')
+      + '</div></div>';
+  }).join('');
 }
-async function handleMediaUpload(file, folder, urlInputId, imgPreviewId, videoPreviewId, statusId, wrapId, barId){
-  if(!file) return;
-  const statusEl = qs('#'+statusId);
-  const wrap = qs('#'+wrapId);
-  const bar = qs('#'+barId);
+function addHeroMediaUrl(){
+  const input = qs('#set-hero-media-url');
+  const url = input.value.trim();
+  if(!url) return;
+  HERO_MEDIA.push(url);
+  input.value = '';
+  renderHeroGallery();
+}
+function removeHeroMedia(i){
+  HERO_MEDIA.splice(i, 1);
+  renderHeroGallery();
+}
+function moveHeroMedia(i, dir){
+  const j = i + dir;
+  if(j < 0 || j >= HERO_MEDIA.length) return;
+  const tmp = HERO_MEDIA[i]; HERO_MEDIA[i] = HERO_MEDIA[j]; HERO_MEDIA[j] = tmp;
+  renderHeroGallery();
+}
+window.addHeroMediaUrl = addHeroMediaUrl;
+window.removeHeroMedia = removeHeroMedia;
+window.moveHeroMedia = moveHeroMedia;
+async function handleHeroMediaUpload(files){
+  files = Array.from(files || []);
+  if(!files.length) return;
+  const statusEl = qs('#set-hero-media-upload-status');
+  const wrap = qs('#set-hero-media-upload-progress-wrap');
+  const bar = qs('#set-hero-media-upload-progress');
   wrap.classList.remove('hidden');
-  bar.style.width = '0%';
-  statusEl.textContent = 'Uploading…';
-  try{
-    const url = await mistiData.uploadImage(file, folder, function(pct){ bar.style.width = pct + '%'; });
-    qs('#'+urlInputId).value = url;
-    updateMediaPreview(urlInputId, imgPreviewId, videoPreviewId);
-    statusEl.textContent = 'Uploaded ✓';
-    setTimeout(()=>{ wrap.classList.add('hidden'); statusEl.textContent = ''; }, 1500);
-  }catch(e){
-    console.error('mistiCRAFT media upload error', e);
-    statusEl.textContent = 'Upload failed — check your connection and try again.';
-    wrap.classList.add('hidden');
+  for(let i = 0; i < files.length; i++){
+    bar.style.width = '0%';
+    statusEl.textContent = 'Uploading ' + (i + 1) + ' of ' + files.length + '…';
+    try{
+      const url = await mistiData.uploadImage(files[i], 'hero-media', function(pct){ bar.style.width = pct + '%'; });
+      HERO_MEDIA.push(url);
+      renderHeroGallery();
+    }catch(e){
+      console.error('mistiCRAFT hero media upload error', e);
+      statusEl.textContent = 'Upload failed — check your connection and try again.';
+      wrap.classList.add('hidden');
+      return;
+    }
   }
+  statusEl.textContent = 'Uploaded ✓';
+  setTimeout(()=>{ wrap.classList.add('hidden'); statusEl.textContent = ''; }, 1500);
+  qs('#set-hero-media-file').value = '';
 }
+window.handleHeroMediaUpload = handleHeroMediaUpload;
 
 /* ---------- Store settings ---------- */
-function updateHeroMediaPreview(){
-  updateMediaPreview('set-hero-media-url', 'set-hero-media-preview-img', 'set-hero-media-preview-video');
-}
-async function handleHeroMediaUpload(file){
-  await handleMediaUpload(file, 'hero-media', 'set-hero-media-url', 'set-hero-media-preview-img', 'set-hero-media-preview-video', 'set-hero-media-upload-status', 'set-hero-media-upload-progress-wrap', 'set-hero-media-upload-progress');
-}
-window.updateHeroMediaPreview = updateHeroMediaPreview;
-window.handleHeroMediaUpload = handleHeroMediaUpload;
 async function saveStoreSettings(){
   const status = qs('#settings-save-status');
   const patch = {
@@ -1625,7 +1651,7 @@ async function saveStoreSettings(){
     default_transporter: qs('#set-default-transporter').value.trim(),
     upi_id: qs('#set-upi-id').value.trim(),
     upi_payee_name: qs('#set-upi-payee-name').value.trim(),
-    hero_media_url: qs('#set-hero-media-url').value.trim()
+    hero_media: HERO_MEDIA
   };
   const ok = await mistiData.saveSettings(patch);
   status.textContent = ok ? 'Saved!' : 'Could not save — check your connection';
@@ -1641,8 +1667,8 @@ function hydrateSettingsForm(s){
   qs('#set-default-transporter').value = s.default_transporter || '';
   qs('#set-upi-id').value = s.upi_id || '';
   qs('#set-upi-payee-name').value = s.upi_payee_name || '';
-  qs('#set-hero-media-url').value = s.hero_media_url || '';
-  updateHeroMediaPreview();
+  HERO_MEDIA = (s.hero_media && s.hero_media.length) ? s.hero_media.slice() : (s.hero_media_url ? [s.hero_media_url] : []);
+  renderHeroGallery();
 }
 
 /* ---------- Order logistics modal ---------- */
