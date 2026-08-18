@@ -270,17 +270,6 @@ details.acc[open] .acc-chevron{ transform:rotate(180deg); }
 </div>
 </form>
 
-<div class="mt-8 p-6 border-l-4 border-primary-container bg-surface-container-lowest">
-<div class="flex gap-4 items-start">
-<div class="shrink-0 w-16 h-16 rounded-full overflow-hidden border-2 border-primary-container">
-<img class="w-full h-full object-cover" alt="Meera Bai" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBHfcF6KE2e-VHpXMsk42UVbLfbdZAGVD7BTi8aSm4w3m8dH0gF8qUiFwim-V4zl4KeJoiA54aziQpFkYnYGrh8oGMbpUov7_6kZuXDVdQ0TxkqZadeW7n7PSxWLDt898LQgx9lMHLpM27BP_paUzwRDtISMQ9FLe8Ao_oRtWuiCTnjdu7-V09BJdo9NGuzrAi4k0Fj6fwgHSGZVdwLzM_e6oLCHkFT4iyErps6lrtrBk9ztAb748EzxT1EydoUkrWg1ZEzkNtapfiV"/>
-</div>
-<div>
-<h4 class="font-label-md text-on-surface uppercase">Meet Your Artisan: Meera Bai</h4>
-<p class="font-body-md italic text-on-surface-variant mt-2 leading-snug">&ldquo;Each stitch is a prayer to the traditions of my grandmother. When you wear this, you carry a piece of Udaipur's history.&rdquo;</p>
-</div>
-</div>
-</div>
 </div>
 </div>
 
@@ -295,27 +284,27 @@ details.acc[open] .acc-chevron{ transform:rotate(180deg); }
 <span class="material-symbols-outlined text-primary mb-4 scale-125">eco</span>
 <h4 class="font-label-md uppercase mb-4">Fabrication</h4>
 <ul class="font-body-md text-on-surface-variant space-y-2">
-<li>100% GOTS Certified Organic Pima Cotton</li>
-<li>220 GSM heavyweight luxury feel</li>
-<li>Natural bio-wash for silk-like handfeel</li>
+<li>Ethically sourced, quality-checked materials</li>
+<li>Handpicked for durability and feel</li>
+<li>Finished by hand in our Udaipur studio</li>
 </ul>
 </div>
 <div class="p-8 bg-surface-container-low border border-outline-variant/20">
 <span class="material-symbols-outlined text-primary mb-4 scale-125">precision_manufacturing</span>
-<h4 class="font-label-md uppercase mb-4">Stitching Technique</h4>
+<h4 class="font-label-md uppercase mb-4">Craftsmanship</h4>
 <ul class="font-body-md text-on-surface-variant space-y-2">
-<li>Hand-guided Zardozi embroidery</li>
-<li>Double-needle reinforced seams</li>
-<li>Reinforced collar with heritage trim</li>
+<li id="spec-technique">Hand-guided craftsmanship</li>
+<li>Finished and quality-checked by hand</li>
+<li>Rooted in traditional Udaipur craft, passed through generations</li>
 </ul>
 </div>
 <div class="p-8 bg-surface-container-low border border-outline-variant/20">
 <span class="material-symbols-outlined text-primary mb-4 scale-125">dry_cleaning</span>
 <h4 class="font-label-md uppercase mb-4">Care Instructions</h4>
 <ul class="font-body-md text-on-surface-variant space-y-2">
-<li>Professional dry clean recommended</li>
-<li>Hand wash cold with mild pH-neutral soap</li>
-<li>Iron inside out on low setting</li>
+<li>Spot clean or professional dry clean recommended</li>
+<li>Store away from direct sunlight and moisture</li>
+<li>Handle gently to preserve embellishments</li>
 </ul>
 </div>
 </div>
@@ -690,6 +679,11 @@ async function hydrateProductHero(products){
   if(headingEl) headingEl.textContent = p.name;
   const descEl = qs('#product-description');
   if(descEl) descEl.textContent = p.tagline || 'Handcrafted by mistiCRAFT artisans in Udaipur.';
+  const techEl = qs('#spec-technique');
+  if(techEl){
+    const label = mistiData.TECHNIQUE_LABELS[p.technique];
+    techEl.textContent = label ? ('Hand-guided ' + label.toLowerCase()) : 'Hand-guided craftsmanship';
+  }
   GALLERY_IMAGES = (p.images && p.images.length) ? p.images : (p.img ? [p.img] : []);
   lightboxIndex = 0;
   renderGallery(GALLERY_IMAGES);
