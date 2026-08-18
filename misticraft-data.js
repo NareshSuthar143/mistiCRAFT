@@ -535,6 +535,18 @@
       return true;
     } catch (e) { console.error('mistiCRAFT updateOrderLogistics error', e); return false; }
   }
+  /* Uploads a generated invoice PDF (see invoice.js generateBlob) to the
+     'invoices' bucket, keyed by the order's own UUID so the link is
+     shareable (public bucket) without being guessable/enumerable. RLS
+     only lets the order's own owner (or admin) write this path. */
+  async function uploadInvoicePdf(orderId, blob) {
+    var path = orderId + '.pdf';
+    var client = db();
+    var res = await client.storage.from('invoices').upload(path, blob, { contentType: 'application/pdf', upsert: true });
+    if (res.error) throw res.error;
+    var pub = client.storage.from('invoices').getPublicUrl(path);
+    return pub.data.publicUrl;
+  }
   /* Customer-facing: look up an order with no login, by order number
      plus the phone or email used at checkout. */
   async function trackOrder(orderNumber, contact) {
@@ -677,6 +689,7 @@
     cart: { get: cartGet, set: cartSet, subscribe: cartSubscribe, add: cartAdd, updateQty: cartUpdateQty, remove: cartRemove, clear: cartClear },
     wishlist: { get: wishlistGet, set: wishlistSet, subscribe: wishlistSubscribe, toggle: wishlistToggle },
     orders: { create: createOrder, subscribeAll: subscribeCustomerOrders, subscribeForUser: subscribeUserOrders, updateStatus: updateCustomerOrderStatus, updateLogistics: updateOrderLogistics, decrementStock: decrementStock },
+    uploadInvoicePdf: uploadInvoicePdf,
     uploadImage: uploadImage,
     STAGE_LABELS: STAGE_LABELS,
     trackOrder: trackOrder

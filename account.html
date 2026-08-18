@@ -663,6 +663,7 @@ function orderCardHTML(order){
         + '<div class="flex flex-col gap-2 shrink-0">'
         + '<button onclick="switchTab(\'tracking\')" class="border border-primary text-primary font-label-sm text-label-sm uppercase px-4 py-2 rounded-sm hover:bg-primary hover:text-on-primary transition-colors w-full text-center">Track Order</button>'
         + '<button onclick="downloadOrderInvoice(\'' + order.id + '\')" class="text-on-surface-variant font-label-sm text-label-sm uppercase px-4 py-2 hover:text-primary transition-colors w-full text-center flex items-center justify-center gap-1"><span class="material-symbols-outlined text-[16px]">receipt_long</span> Invoice</button>'
+        + '<button onclick="shareOrderInvoice(\'' + order.id + '\')" class="text-on-surface-variant font-label-sm text-label-sm uppercase px-4 py-2 hover:text-primary transition-colors w-full text-center flex items-center justify-center gap-1"><span class="material-symbols-outlined text-[16px]">share</span> Share</button>'
         + '</div>'
         + '</div>'
       ) : '')
@@ -688,6 +689,26 @@ function downloadOrderInvoice(id){
   if(!ok) toast('Could not generate invoice — check your connection', 'error');
 }
 window.downloadOrderInvoice = downloadOrderInvoice;
+async function shareOrderInvoice(id){
+  const order = ORDERS_BY_ID[id];
+  if(!order){ toast('Order not found', 'error'); return; }
+  const blob = window.mistiInvoice && window.mistiInvoice.generateBlob(order, LATEST_SETTINGS);
+  if(!blob){ toast('Could not generate invoice — check your connection', 'error'); return; }
+  try {
+    const url = await mistiData.uploadInvoicePdf(order.id, blob);
+    if(navigator.share){
+      await navigator.share({ title: 'mistiCRAFT Invoice ' + order.orderNumber, url: url });
+    } else {
+      await navigator.clipboard.writeText(url);
+      toast('Invoice link copied to clipboard');
+    }
+  } catch(e){
+    if(e && e.name === 'AbortError') return;
+    console.error('mistiCRAFT share invoice error', e);
+    toast('Could not create invoice link — check your connection', 'error');
+  }
+}
+window.shareOrderInvoice = shareOrderInvoice;
 
 function renderDashboard(orders){
   const el = qs('#dash-recent-order');

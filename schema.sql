@@ -450,3 +450,42 @@ select cron.schedule(
   $$
 );
 
+-- ---------- Shareable invoice links ----------
+-- Storage bucket for customer invoice PDFs, generated client-side
+-- (invoice.js) and uploaded so a permanent link can be shared (WhatsApp,
+-- email, etc.) instead of only downloading to one device. Public bucket
+-- + unguessable path (the order's own UUID as the filename) is the trust
+-- model here, matching product/artisan/founder/hero media, but
+-- insert/update is scoped to the order's own owner (or admin) rather
+-- than admin-only, since guests and logged-in customers both need to be
+-- able to generate/share their own invoice.
+insert into storage.buckets (id, name, public)
+values ('invoices', 'invoices', true)
+on conflict (id) do nothing;
+
+drop policy if exists "invoices public read" on storage.objects;
+create policy "invoices public read" on storage.objects
+for select using (bucket_id = 'invoices');
+
+drop policy if exists "invoices owner insert" on storage.objects;
+create policy "invoices owner insert" on storage.objects
+for insert with check (
+  bucket_id = 'invoices'
+  and exists (
+    select 1 from customer_orders o
+    where o.id::text = split_part(storage.objects.name, '.', 1)
+    and (o.uid = auth.uid() or is_admin())
+  )
+);
+
+drop policy if exists "invoices owner update" on storage.objects;
+create policy "invoices owner update" on storage.objects
+for update using (
+  bucket_id = 'invoices'
+  and exists (
+    select 1 from customer_orders o
+    where o.id::text = split_part(storage.objects.name, '.', 1)
+    and (o.uid = auth.uid() or is_admin())
+  )
+);
+
