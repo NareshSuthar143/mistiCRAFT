@@ -10,6 +10,8 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="supabase-init.js"></script>
 <script src="misticraft-data.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/4.0.0/jspdf.umd.min.js"></script>
+<script src="invoice.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin=""/>
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,400;0,500;0,600;0,700;1,400&amp;family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&amp;display=swap" rel="stylesheet"/>
@@ -182,6 +184,7 @@ body[data-page="admin"]{ background:#fbf9f4; }
 <a href="#" data-target="analytics" class="admin-tab flex items-center gap-3 px-4 py-3 rounded text-on-surface-variant hover:bg-surface-container-high transition-colors font-label-md text-label-md"><span class="material-symbols-outlined">trending_up</span> Sales Analytics</a>
 <a href="#" data-target="customer-orders" class="admin-tab flex items-center gap-3 px-4 py-3 rounded text-on-surface-variant hover:bg-surface-container-high transition-colors font-label-md text-label-md"><span class="material-symbols-outlined">shopping_bag</span> Customer Orders</a>
 <a href="#" data-target="orders" class="admin-tab flex items-center gap-3 px-4 py-3 rounded text-on-surface-variant hover:bg-surface-container-high transition-colors font-label-md text-label-md"><span class="material-symbols-outlined">local_shipping</span> Order Fulfillment</a>
+<a href="#" data-target="invoices" class="admin-tab flex items-center gap-3 px-4 py-3 rounded text-on-surface-variant hover:bg-surface-container-high transition-colors font-label-md text-label-md"><span class="material-symbols-outlined">receipt_long</span> Invoices</a>
 <a href="#" data-target="artisans" class="admin-tab flex items-center gap-3 px-4 py-3 rounded text-on-surface-variant hover:bg-surface-container-high transition-colors font-label-md text-label-md"><span class="material-symbols-outlined">groups</span> Artisan Profiles</a>
 <a href="#" data-target="founders" class="admin-tab flex items-center gap-3 px-4 py-3 rounded text-on-surface-variant hover:bg-surface-container-high transition-colors font-label-md text-label-md"><span class="material-symbols-outlined">badge</span> Leadership</a>
 </nav>
@@ -416,6 +419,24 @@ body[data-page="admin"]{ background:#fbf9f4; }
 <tbody id="orders-table-body" class="font-body-md text-body-md text-on-surface"></tbody>
 </table>
 </div>
+</div>
+</div>
+
+<div id="tab-invoices" data-tab-content class="hidden">
+<div class="mb-8">
+<h1 class="font-headline-lg text-headline-lg text-primary">Invoices</h1>
+<p class="font-body-md text-body-md text-on-surface-variant mt-1">Download or share a tax invoice for any customer order.</p>
+</div>
+<div class="bg-surface rounded-lg border border-outline-variant/30 p-6">
+<div class="overflow-x-auto -mx-2">
+<table class="w-full text-left border-collapse min-w-[640px]">
+<thead><tr class="border-b border-outline-variant/30 text-on-surface-variant font-label-sm text-label-sm uppercase tracking-wider">
+<th class="py-3 px-2 font-medium">Order #</th><th class="py-3 px-2 font-medium">Customer</th><th class="py-3 px-2 font-medium text-right">Total</th><th class="py-3 px-2 font-medium">Placed</th><th class="py-3 px-2 font-medium text-right">Actions</th>
+</tr></thead>
+<tbody id="invoices-table-body" class="font-body-md text-body-md text-on-surface"></tbody>
+</table>
+</div>
+<p id="invoices-empty" class="hidden text-center text-on-surface-variant py-8">No customer orders yet — invoices will appear here once someone checks out.</p>
 </div>
 </div>
 
@@ -1179,6 +1200,7 @@ window.updateOrderStatus = updateOrderStatus;
 
 /* ---------- Customer Orders (created at checkout — separate from the workshop production board above) ---------- */
 let LIVE_CUSTOMER_ORDERS = [];
+let LATEST_SETTINGS = {};
 const CUSTOMER_ORDER_STATUSES = ['Pending','Processing','Shipped','Delivered','Cancelled'];
 const CUSTOMER_STATUS_BADGE = {
   'Pending':'bg-surface-container-high text-on-surface-variant',
@@ -1211,6 +1233,52 @@ function renderCustomerOrdersTable(){
   const empty = qs('#customer-orders-empty');
   if(empty) empty.classList.toggle('hidden', LIVE_CUSTOMER_ORDERS.length !== 0);
 }
+function invoiceRowHTML(o){
+  const dateStr = new Date(o.createdAt).toLocaleDateString('en-IN', {month:'short', day:'numeric', year:'numeric'});
+  const customerLine = (o.contact && o.contact.email) ? esc(o.contact.email) : ((o.address && o.address.name) ? esc(o.address.name) : 'Guest');
+  return '<tr class="border-b border-outline-variant/10 hover:bg-surface-container-low transition-colors">'
+    + '<td class="py-3 px-2 font-medium">' + o.orderNumber + '</td>'
+    + '<td class="py-3 px-2">' + customerLine + '</td>'
+    + '<td class="py-3 px-2 text-right">' + mistiData.formatINR(o.total) + '</td>'
+    + '<td class="py-3 px-2 text-on-surface-variant whitespace-nowrap">' + dateStr + '</td>'
+    + '<td class="py-3 px-2 text-right whitespace-nowrap">'
+    + '<button onclick="downloadAdminInvoice(\'' + jsq(o.id) + '\')" class="text-on-surface-variant text-xs uppercase tracking-wide hover:text-primary mr-3">Download</button>'
+    + '<button onclick="shareAdminInvoice(\'' + jsq(o.id) + '\')" class="text-on-surface-variant text-xs uppercase tracking-wide hover:text-primary">Share</button>'
+    + '</td></tr>';
+}
+function renderInvoicesTable(){
+  const body = qs('#invoices-table-body');
+  if(body) body.innerHTML = LIVE_CUSTOMER_ORDERS.map(invoiceRowHTML).join('');
+  const empty = qs('#invoices-empty');
+  if(empty) empty.classList.toggle('hidden', LIVE_CUSTOMER_ORDERS.length !== 0);
+}
+function downloadAdminInvoice(id){
+  const order = LIVE_CUSTOMER_ORDERS.find(function(o){ return o.id === id; });
+  if(!order){ toast('Order not found', 'error'); return; }
+  const ok = window.mistiInvoice && window.mistiInvoice.generate(order, LATEST_SETTINGS);
+  if(!ok) toast('Could not generate invoice — check your connection', 'error');
+}
+window.downloadAdminInvoice = downloadAdminInvoice;
+async function shareAdminInvoice(id){
+  const order = LIVE_CUSTOMER_ORDERS.find(function(o){ return o.id === id; });
+  if(!order){ toast('Order not found', 'error'); return; }
+  const blob = window.mistiInvoice && window.mistiInvoice.generateBlob(order, LATEST_SETTINGS);
+  if(!blob){ toast('Could not generate invoice — check your connection', 'error'); return; }
+  try {
+    const url = await mistiData.uploadInvoicePdf(order.id, blob);
+    if(navigator.share){
+      await navigator.share({ title: 'mistiCRAFT Invoice ' + order.orderNumber, url: url });
+    } else {
+      await navigator.clipboard.writeText(url);
+      toast('Invoice link copied to clipboard');
+    }
+  } catch(e){
+    if(e && e.name === 'AbortError') return;
+    console.error('mistiCRAFT share invoice error', e);
+    toast('Could not create invoice link — check your connection', 'error');
+  }
+}
+window.shareAdminInvoice = shareAdminInvoice;
 async function updateCustomerOrderStatusUI(id, status){
   const badge = qs('#co-badge-' + id);
   if(badge){
@@ -1298,6 +1366,7 @@ function handleCustomerOrdersUpdate(orders){
   NOTIF_SEEN_IDS = new Set(orders.map(function(o){ return o.id; }));
   LIVE_CUSTOMER_ORDERS = orders;
   renderCustomerOrdersTable();
+  renderInvoicesTable();
   renderNotifPanel();
   updateDashboardStats();
 }
@@ -1794,7 +1863,7 @@ async function initAdminData(){
     renderFoundersGrid();
   });
   mistiData.orders.subscribeAll(handleCustomerOrdersUpdate);
-  mistiData.subscribeSettings(function(s){ hydrateSettingsForm(s); });
+  mistiData.subscribeSettings(function(s){ hydrateSettingsForm(s); LATEST_SETTINGS = s || {}; });
   refreshNotifEnableBtn();
 }
 
