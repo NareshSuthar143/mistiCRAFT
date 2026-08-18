@@ -151,10 +151,11 @@ body{ -webkit-font-smoothing:antialiased; }
 
 <div id="res-logistics" class="hidden mb-8 bg-surface-container-low border border-outline-variant/20 p-5 flex items-center gap-4">
 <span class="material-symbols-outlined text-primary text-[28px]">local_shipping</span>
-<div>
+<div class="flex-1">
 <p class="font-label-md text-label-md text-on-surface" id="res-transporter"></p>
 <p class="font-label-sm text-label-sm text-on-surface-variant" id="res-tracking-id"></p>
 </div>
+<a id="res-delhivery-link" href="#" target="_blank" rel="noopener" class="hidden shrink-0 font-label-sm text-label-sm text-primary underline underline-offset-2 whitespace-nowrap">Track on Delhivery</a>
 </div>
 
 <h3 class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest mb-6">Delivery Timeline</h3>
@@ -292,12 +293,20 @@ function renderTrackResult(order){
   qs('#res-date').textContent = new Date(order.createdAt).toLocaleDateString('en-IN', {month:'short', day:'numeric', year:'numeric'});
   qs('#res-total').textContent = mistiData.formatINR(order.total);
   const logistics = qs('#res-logistics');
+  const delhiveryLink = qs('#res-delhivery-link');
   if(order.transporter){
     logistics.classList.remove('hidden');
     qs('#res-transporter').textContent = order.transporter;
     qs('#res-tracking-id').textContent = order.trackingId ? ('Tracking ID: ' + order.trackingId) : '';
+    if(order.trackingId && /delhivery/i.test(order.transporter)){
+      delhiveryLink.href = 'https://www.delhivery.com/track/package/' + encodeURIComponent(order.trackingId);
+      delhiveryLink.classList.remove('hidden');
+    } else {
+      delhiveryLink.classList.add('hidden');
+    }
   } else {
     logistics.classList.add('hidden');
+    delhiveryLink.classList.add('hidden');
   }
   renderTimeline(order.events);
   qs('#res-items').innerHTML = order.items.map(trackItemHTML).join('');
