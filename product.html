@@ -216,7 +216,7 @@ details.acc[open] .acc-chevron{ transform:rotate(180deg); }
 </div>
 </div>
 <div class="bg-surface-container-low h-px w-full"></div>
-<p class="font-body-md text-on-surface-variant leading-relaxed">The 'Mayur' (Peacock) Tee is a testament to the slow fashion movement. Featuring handcrafted <strong class="text-on-surface">Zardozi embroidery</strong> executed with real metallic threads, each piece takes 14 hours to complete. Rendered on ethically sourced <strong class="text-on-surface">Organic Pima Cotton</strong> for unparalleled softness.</p>
+<p class="font-body-md text-on-surface-variant leading-relaxed" id="product-description">Handcrafted by mistiCRAFT artisans in Udaipur.</p>
 
 <form class="flex flex-col gap-8" onsubmit="return false;">
 <div>
@@ -369,7 +369,6 @@ details.acc[open] .acc-chevron{ transform:rotate(180deg); }
 <a class="font-label-sm text-label-sm text-on-surface-variant dark:text-surface-variant hover:text-secondary transition-colors w-fit" href="mailto:hello@misticraft.example">Contact Us</a>
 <a class="font-label-sm text-label-sm text-on-surface-variant dark:text-surface-variant hover:text-secondary transition-colors w-fit" href="tel:+919079071349">Call Us</a>
 <a class="font-label-sm text-label-sm text-on-surface-variant dark:text-surface-variant hover:text-secondary transition-colors w-fit" href="https://wa.me/919079071349" target="_blank" rel="noopener noreferrer">WhatsApp Us</a>
-<a class="font-label-sm text-label-sm text-on-surface-variant dark:text-surface-variant hover:text-secondary transition-colors w-fit" href="admin.html">Workshop Admin</a>
 </div>
 <div class="flex flex-col gap-4">
 <h5 class="font-headline-md text-headline-md text-tertiary dark:text-tertiary-fixed mb-1">Newsletter</h5>
@@ -689,6 +688,8 @@ async function hydrateProductHero(products){
   if(crumbEl) crumbEl.textContent = p.name;
   const headingEl = qs('#product-name-heading');
   if(headingEl) headingEl.textContent = p.name;
+  const descEl = qs('#product-description');
+  if(descEl) descEl.textContent = p.tagline || 'Handcrafted by mistiCRAFT artisans in Udaipur.';
   GALLERY_IMAGES = (p.images && p.images.length) ? p.images : (p.img ? [p.img] : []);
   lightboxIndex = 0;
   renderGallery(GALLERY_IMAGES);
