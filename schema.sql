@@ -324,3 +324,129 @@ drop policy if exists "hero media admin delete" on storage.objects;
 create policy "hero media admin delete" on storage.objects
 for delete using (bucket_id = 'hero-media' and is_admin());
 
+-- ============================================================
+-- Live order tracking: a fine-grained stage timeline per customer
+-- order, kept up to date two ways —
+--   1. the admin status dropdown (writes a tracking_events row instead
+--      of customer_orders.status directly — see mistiData.orders.updateStatus)
+--   2. the delhivery-sync Edge Function (supabase/functions/delhivery-sync),
+--      polled on a schedule by pg_cron below, which reads each Delhivery
+--      shipment's live status via their Track API and appends events
+--      the same way.
+-- The customer's own no-login lookup (order number + phone/email) goes
+-- through a SECURITY DEFINER function below, so tracking_events and
+-- customer_orders stay locked down to admins only via RLS.
+-- ============================================================
+
+create table if not exists tracking_events (
+  id uuid primary key default gen_random_uuid(),
+  order_id uuid not null references customer_orders(id) on delete cascade,
+  stage text not null check (stage in ('placed','processing','shipped','out_for_delivery','delivered','cancelled')),
+  note text,
+  created_at timestamptz not null default now()
+);
+alter table tracking_events enable row level security;
+-- No anon/authenticated policy on purpose — a tracking customer only
+-- ever reads through track_order() below; admins keep direct access
+-- for the Admin panel, and the delhivery-sync function writes with
+-- the service role, which bypasses RLS entirely.
+drop policy if exists "tracking_events admin all" on tracking_events;
+create policy "tracking_events admin all" on tracking_events for all using (is_admin()) with check (is_admin());
+alter publication supabase_realtime add table tracking_events;
+
+-- Coarse status (shown on the Admin board and customer_orders row)
+-- mirrors the latest tracking_events stage. This is the ONE place
+-- that writes customer_orders.status — both the admin status dropdown
+-- and delhivery-sync go through inserting a tracking_events row, and
+-- this trigger keeps status in sync automatically.
+create or replace function tracking_events_sync_order_status()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  update customer_orders set status = case new.stage
+    when 'placed' then 'Pending'
+    when 'processing' then 'Processing'
+    when 'shipped' then 'Shipped'
+    when 'out_for_delivery' then 'Shipped'
+    when 'delivered' then 'Delivered'
+    when 'cancelled' then 'Cancelled'
+    else status end
+  where id = new.order_id;
+  return new;
+end;
+$$;
+drop trigger if exists sync_order_status_on_tracking_event on tracking_events;
+create trigger sync_order_status_on_tracking_event
+after insert on tracking_events
+for each row execute function tracking_events_sync_order_status();
+
+-- Every new customer order starts its timeline with a 'placed' event.
+create or replace function customer_orders_seed_first_tracking_event()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  insert into tracking_events (order_id, stage) values (new.id, 'placed');
+  return new;
+end;
+$$;
+drop trigger if exists seed_first_tracking_event on customer_orders;
+create trigger seed_first_tracking_event
+after insert on customer_orders
+for each row execute function customer_orders_seed_first_tracking_event();
+
+-- ---------- Customer-facing lookup: order number + phone or email ----------
+-- Returns only what a customer needs to see their own order — never a
+-- full table scan, and only when both the order number AND a contact
+-- value they'd know (their own email/phone) match.
+create or replace function track_order(p_order_number text, p_contact text)
+returns table (
+  order_number text, status text, items jsonb, subtotal numeric, shipping numeric, total numeric,
+  transporter text, tracking_id text, created_at timestamptz, events jsonb
+)
+language sql
+security definer
+set search_path = public
+as $$
+  select o.order_number, o.status, o.items, o.subtotal, o.shipping, o.total,
+         o.transporter, o.tracking_id, o.created_at,
+         coalesce((select jsonb_agg(jsonb_build_object('stage', te.stage, 'note', te.note, 'created_at', te.created_at) order by te.created_at)
+                   from tracking_events te where te.order_id = o.id), '[]'::jsonb) as events
+  from customer_orders o
+  where o.order_number = p_order_number
+    and p_contact is not null and length(trim(p_contact)) > 0
+    and (o.contact->>'email' = p_contact or o.contact->>'phone' = p_contact)
+  limit 1;
+$$;
+grant execute on function track_order(text, text) to anon, authenticated;
+
+-- ---------- Delhivery live tracking sync ----------
+-- Every order shipped via Delhivery (admin sets transporter = "Delhivery"
+-- plus the waybill number as tracking_id, same Shipping Logistics modal
+-- as before) gets polled automatically — no manual status updates
+-- needed. See supabase/functions/delhivery-sync for the actual API call;
+-- this just schedules it. DELHIVERY_API_TOKEN is an Edge Function secret
+-- (Dashboard > Edge Functions > delhivery-sync > Secrets), never stored
+-- in the database or this file.
+create extension if not exists pg_cron with schema extensions;
+create extension if not exists pg_net with schema extensions;
+
+select cron.unschedule('delhivery-sync-job') where exists (select 1 from cron.job where jobname = 'delhivery-sync-job');
+
+select cron.schedule(
+  'delhivery-sync-job',
+  '*/10 * * * *',
+  $$
+  select net.http_post(
+    url := 'https://pdntxosjtacqgvzavtio.supabase.co/functions/v1/delhivery-sync',
+    headers := '{"Content-Type":"application/json"}'::jsonb,
+    body := '{}'::jsonb
+  );
+  $$
+);
+
