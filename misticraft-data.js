@@ -488,9 +488,39 @@
       .subscribe();
     return function () { client.removeChannel(channel); };
   }
+  /* ---------------- Live order tracking ----------------
+     A fine-grained stage timeline (tracking_events) sits underneath the
+     coarse `status` column. Every status change — from the admin
+     dropdown here, or from the transporter's own link — is written as
+     a tracking_events row; a DB trigger (see schema.sql) keeps
+     customer_orders.status in sync automatically. Neither the
+     transporter nor a tracking customer ever gets an auth session:
+     both go through SECURITY DEFINER Postgres functions that check a
+     secret token / contact match themselves. */
+  var STAGE_LABELS = {
+    placed: 'Order Placed',
+    processing: 'Processing',
+    shipped: 'Shipped',
+    out_for_delivery: 'Out for Delivery',
+    delivered: 'Delivered',
+    cancelled: 'Cancelled'
+  };
+  var STATUS_TO_STAGE = {
+    'Pending': 'placed',
+    'Processing': 'processing',
+    'Shipped': 'shipped',
+    'Delivered': 'delivered',
+    'Cancelled': 'cancelled'
+  };
+  function normalizeTrackingEvents(events) {
+    return (events || []).map(function (e) {
+      return { stage: e.stage, label: STAGE_LABELS[e.stage] || e.stage, note: e.note || '', createdAt: e.created_at ? new Date(e.created_at).getTime() : Date.now() };
+    });
+  }
   async function updateCustomerOrderStatus(orderId, status) {
     try {
-      var res = await db().from('customer_orders').update({ status: status }).eq('id', orderId);
+      var stage = STATUS_TO_STAGE[status] || 'processing';
+      var res = await db().from('tracking_events').insert({ order_id: orderId, stage: stage });
       if (res.error) throw res.error;
       return true;
     } catch (e) { console.error('mistiCRAFT updateCustomerOrderStatus error', e); return false; }
@@ -504,6 +534,28 @@
       if (res.error) throw res.error;
       return true;
     } catch (e) { console.error('mistiCRAFT updateOrderLogistics error', e); return false; }
+  }
+  /* Customer-facing: look up an order with no login, by order number
+     plus the phone or email used at checkout. */
+  async function trackOrder(orderNumber, contact) {
+    try {
+      var res = await db().rpc('track_order', { p_order_number: String(orderNumber || '').trim(), p_contact: String(contact || '').trim() });
+      if (res.error) throw res.error;
+      var row = (res.data || [])[0];
+      if (!row) return null;
+      return {
+        orderNumber: row.order_number,
+        status: row.status,
+        items: row.items || [],
+        subtotal: row.subtotal,
+        shipping: row.shipping,
+        total: row.total,
+        transporter: row.transporter || '',
+        trackingId: row.tracking_id || '',
+        createdAt: row.created_at ? new Date(row.created_at).getTime() : Date.now(),
+        events: normalizeTrackingEvents(row.events)
+      };
+    } catch (e) { console.error('mistiCRAFT trackOrder error', e); return null; }
   }
   async function decrementStock(items) {
     try {
@@ -625,6 +677,8 @@
     cart: { get: cartGet, set: cartSet, subscribe: cartSubscribe, add: cartAdd, updateQty: cartUpdateQty, remove: cartRemove, clear: cartClear },
     wishlist: { get: wishlistGet, set: wishlistSet, subscribe: wishlistSubscribe, toggle: wishlistToggle },
     orders: { create: createOrder, subscribeAll: subscribeCustomerOrders, subscribeForUser: subscribeUserOrders, updateStatus: updateCustomerOrderStatus, updateLogistics: updateOrderLogistics, decrementStock: decrementStock },
-    uploadImage: uploadImage
+    uploadImage: uploadImage,
+    STAGE_LABELS: STAGE_LABELS,
+    trackOrder: trackOrder
   };
 })(window);
