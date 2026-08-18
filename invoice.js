@@ -12,10 +12,10 @@
   }
   function esc(s) { return String(s == null ? '' : s); }
 
-  function generate(order, settings) {
+  function buildDoc(order, settings) {
     if (typeof window.jspdf === 'undefined' || !window.jspdf.jsPDF) {
       console.error('mistiCRAFT invoice: jsPDF did not load — check your network connection.');
-      return false;
+      return null;
     }
     settings = settings || {};
     var jsPDF = window.jspdf.jsPDF;
@@ -118,9 +118,20 @@
     doc.text('Thank you for shopping with mistiCRAFT.', marginX, y); y += 5;
     doc.text('This is a system-generated invoice and does not require a signature.', marginX, y);
 
+    return doc;
+  }
+
+  function generate(order, settings) {
+    var doc = buildDoc(order, settings);
+    if (!doc) return false;
     doc.save('mistiCRAFT-Invoice-' + (order.orderNumber || 'order') + '.pdf');
     return true;
   }
 
-  root.mistiInvoice = { generate: generate };
+  function generateBlob(order, settings) {
+    var doc = buildDoc(order, settings);
+    return doc ? doc.output('blob') : null;
+  }
+
+  root.mistiInvoice = { generate: generate, generateBlob: generateBlob };
 })(window);

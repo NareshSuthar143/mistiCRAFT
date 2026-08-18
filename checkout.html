@@ -220,6 +220,7 @@ Pay with UPI <span class="material-symbols-outlined text-lg">arrow_forward</span
 <p class="font-label-md text-label-md text-primary mb-8">Order #<span id="order-number">MC-0000</span> &middot; Estimated delivery <span id="order-eta">—</span></p>
 <div class="flex flex-col sm:flex-row gap-4">
 <button onclick="downloadInvoice()" class="btn border border-primary text-primary font-label-md text-label-md uppercase tracking-widest px-10 py-4 flex items-center justify-center gap-2"><span class="material-symbols-outlined text-lg">receipt_long</span> Download Invoice</button>
+<button onclick="shareInvoiceLink()" class="btn border border-primary text-primary font-label-md text-label-md uppercase tracking-widest px-10 py-4 flex items-center justify-center gap-2"><span class="material-symbols-outlined text-lg">share</span> Share Invoice</button>
 <a href="index.html" class="btn bg-primary text-on-primary font-label-md text-label-md uppercase tracking-widest px-10 py-4">Continue Shopping</a>
 </div>
 </div>
@@ -643,6 +644,25 @@ function downloadInvoice(){
   if(!ok) toast('Could not generate invoice — check your connection', 'error');
 }
 window.downloadInvoice = downloadInvoice;
+async function shareInvoiceLink(){
+  if(!LAST_ORDER){ toast('Invoice not ready yet', 'error'); return; }
+  const blob = window.mistiInvoice && window.mistiInvoice.generateBlob(LAST_ORDER, LATEST_SETTINGS);
+  if(!blob){ toast('Could not generate invoice — check your connection', 'error'); return; }
+  try {
+    const url = await mistiData.uploadInvoicePdf(LAST_ORDER.id, blob);
+    if(navigator.share){
+      await navigator.share({ title: 'mistiCRAFT Invoice ' + LAST_ORDER.orderNumber, url: url });
+    } else {
+      await navigator.clipboard.writeText(url);
+      toast('Invoice link copied to clipboard');
+    }
+  } catch(e){
+    if(e && e.name === 'AbortError') return;
+    console.error('mistiCRAFT share invoice error', e);
+    toast('Could not create invoice link — check your connection', 'error');
+  }
+}
+window.shareInvoiceLink = shareInvoiceLink;
 
 </script>
 </body></html>
