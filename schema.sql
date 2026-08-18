@@ -146,7 +146,7 @@ begin
      is distinct from
      (old.order_number, old.uid, old.items, old.subtotal, old.shipping, old.total,
       old.contact, old.address, old.payment, old.created_at) then
-    raise exception 'Only status may be updated on customer_orders';
+    raise exception 'Only status, transporter, and tracking_id may be updated on customer_orders';
   end if;
   return new;
 end;
