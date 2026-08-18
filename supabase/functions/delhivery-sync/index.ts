@@ -6,6 +6,11 @@
 // schema.sql) that keeps customer_orders.status in sync automatically,
 // so this function only ever needs to write to tracking_events.
 //
+// Each event's note carries the scan description plus the scanned
+// location (e.g. "Manifested — Udaipur_Balicha_H (Rajasthan)"), taken
+// from Delhivery's own Scans[].ScanDetail, so the customer's timeline
+// on track.html shows real transit detail, not just the coarse stage.
+//
 // Invoked on a schedule by pg_cron + pg_net (see schema.sql). Runs with
 // no caller auth (verify_jwt: false) since it takes no input from the
 // caller — it only acts on customer_orders rows already in the DB —
@@ -99,13 +104,15 @@ Deno.serve(async (_req: Request) => {
         continue;
       }
 
-      const note = latestScan?.ScanDetail?.Scan || null;
+      const scanText = latestScan?.ScanDetail?.Scan || null;
+      const location = latestScan?.ScanDetail?.ScannedLocation || shipment.Status?.StatusLocation || null;
+      const note = scanText && location ? `${scanText} — ${location}` : (scanText || location || null);
       const { error: insertError } = await supabase.from("tracking_events").insert({ order_id: order.id, stage, note });
       if (insertError) {
         results.push({ order: order.id, waybill, error: insertError.message });
         continue;
       }
-      results.push({ order: order.id, waybill, stage, updated: true });
+      results.push({ order: order.id, waybill, stage, note, updated: true });
     } catch (e) {
       results.push({ order: order.id, waybill, error: String(e) });
     }
