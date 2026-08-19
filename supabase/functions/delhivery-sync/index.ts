@@ -9,10 +9,15 @@
 // so this function only ever needs to write to tracking_events.
 //
 // Each event's note carries the scan description plus the scanned
-// location (e.g. "Manifested — Udaipur_Balicha_H (Rajasthan)"), taken
-// from Delhivery's own Scans[].ScanDetail, so the customer's timeline
-// on track.html shows real transit detail, not just the coarse stage —
-// and keeps moving even while the coarse stage itself hasn't changed.
+// location (e.g. "Vehicle Departed — Udaipur_Balicha_H (Rajasthan)"),
+// taken from Delhivery's own Scans[].ScanDetail, so the customer's
+// timeline on track.html shows real transit detail, not just the coarse
+// stage — and keeps moving even while the coarse stage itself hasn't
+// changed. Uses ScanDetail.Instructions (the specific per-event
+// description, e.g. "Vehicle Departed", "Added to Bag") rather than
+// ScanDetail.Scan (Delhivery's own coarse bucket, e.g. "In Transit",
+// which stays the same across many distinct scans and would make every
+// new scan within a stage look identical to the last).
 //
 // Invoked on a schedule by pg_cron + pg_net (see schema.sql). Runs with
 // no caller auth (verify_jwt: false) since it takes no input from the
@@ -104,7 +109,7 @@ Deno.serve(async (_req: Request) => {
       const lastRank = lastEvent ? STAGE_RANK[lastEvent.stage] ?? -1 : -1;
       const stageRank = STAGE_RANK[stage];
 
-      const scanText = latestScan?.ScanDetail?.Scan || null;
+      const scanText = latestScan?.ScanDetail?.Instructions || latestScan?.ScanDetail?.Scan || null;
       const location = latestScan?.ScanDetail?.ScannedLocation || shipment.Status?.StatusLocation || null;
       const note = scanText && location ? `${scanText} — ${location}` : (scanText || location || null);
 
