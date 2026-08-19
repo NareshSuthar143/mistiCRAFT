@@ -711,7 +711,8 @@ function renderDashboard(orders){
 
 const TRACKING_STEPS = ['Pending','Processing','Shipped','Delivered'];
 const TRACKING_LABELS = {Pending:'Order Confirmed', Processing:'Processing', Shipped:'Shipped from Workshop', Delivered:'Delivered'};
-function renderTracking(orders){
+const TRACKING_STATUS_TO_STAGE = {Pending:'placed', Processing:'processing', Shipped:'shipped', Delivered:'delivered'};
+async function renderTracking(orders){
   const el = qs('#tracking-content');
   if(!el) return;
   const recent = orders && orders[0];
@@ -725,6 +726,17 @@ function renderTracking(orders){
   }
   const eta = new Date(recent.createdAt + 7 * 24 * 60 * 60 * 1000).toLocaleDateString('en-IN', {month:'long', day:'numeric', year:'numeric'});
   const currentIdx = TRACKING_STEPS.indexOf(recent.status);
+
+  // Fine-grained Delhivery scan notes (see delhivery-sync) live under the
+  // coarse status shown here. tracking_events isn't directly readable by
+  // a logged-in customer (RLS is admin-only), so pull them the same way
+  // track.html does for no-login lookups — order number + the contact on
+  // file — keyed to the latest event per stage.
+  const contactValue = (recent.contact && (recent.contact.email || recent.contact.phone)) || '';
+  const trackedOrder = contactValue ? await mistiData.trackOrder(recent.orderNumber, contactValue).catch(function(){ return null; }) : null;
+  const latestByStage = {};
+  ((trackedOrder && trackedOrder.events) || []).forEach(function(e){ latestByStage[e.stage] = e; });
+
   let stepsHTML = '';
   for(let i = TRACKING_STEPS.length - 1; i >= 0; i--){
     const step = TRACKING_STEPS[i];
@@ -734,13 +746,23 @@ function renderTracking(orders){
     if(isCurrent) circleHTML = '<div class="w-8 h-8 rounded-full bg-secondary-container border-2 border-secondary flex items-center justify-center shrink-0 z-10 relative mt-1"><div class="w-3 h-3 bg-secondary rounded-full animate-pulse"></div></div>';
     else if(done) circleHTML = '<div class="w-8 h-8 rounded-full bg-secondary border-2 border-secondary flex items-center justify-center shrink-0 z-10 relative mt-1"><span class="material-symbols-outlined text-on-secondary text-sm">check</span></div>';
     else circleHTML = '<div class="w-8 h-8 rounded-full bg-surface border-2 border-outline-variant flex items-center justify-center shrink-0 z-10 relative mt-1"></div>';
+    // The "Shipped" bucket covers both the 'shipped' and 'out_for_delivery'
+    // tracking_events stages (see schema.sql's status-sync trigger) — use
+    // whichever has the more recent scan.
+    const event = step === 'Shipped'
+      ? [latestByStage['shipped'], latestByStage['out_for_delivery']].filter(Boolean).sort(function(a,b){ return b.createdAt - a.createdAt; })[0]
+      : latestByStage[TRACKING_STATUS_TO_STAGE[step]];
+    const subtitle = done && event && event.note
+      ? (acctEsc(event.note) + ' &middot; ' + new Date(event.createdAt).toLocaleString('en-IN', {day:'numeric', month:'short', hour:'numeric', minute:'2-digit', hour12:true}))
+      : (done ? 'Complete' : 'Pending');
     stepsHTML += '<div class="flex items-start gap-6' + (done ? '' : ' opacity-50') + '">' + circleHTML
-      + '<div><h4 class="font-headline-md text-headline-md text-on-surface text-lg">' + TRACKING_LABELS[step] + '</h4><p class="font-body-md text-body-md text-on-surface-variant">' + (done ? 'Complete' : 'Pending') + '</p></div></div>';
+      + '<div><h4 class="font-headline-md text-headline-md text-on-surface text-lg">' + TRACKING_LABELS[step] + '</h4><p class="font-body-md text-body-md text-on-surface-variant">' + subtitle + '</p></div></div>';
   }
   const logisticsHTML = recent.transporter
-    ? ('<div class="flex flex-wrap gap-x-8 gap-y-2 mb-6 bg-surface-container-low border border-outline-variant/30 rounded p-4">'
+    ? ('<div class="flex flex-wrap items-center gap-x-8 gap-y-2 mb-6 bg-surface-container-low border border-outline-variant/30 rounded p-4">'
         + '<div><p class="font-label-sm text-label-sm text-on-surface-variant uppercase">Transporter</p><p class="font-body-md text-body-md text-on-surface">' + recent.transporter + '</p></div>'
         + (recent.trackingId ? ('<div><p class="font-label-sm text-label-sm text-on-surface-variant uppercase">Tracking ID</p><p class="font-body-md text-body-md text-on-surface">' + recent.trackingId + '</p></div>') : '')
+        + (recent.trackingId && /delhivery/i.test(recent.transporter) ? ('<a href="https://www.delhivery.com/track/package/' + encodeURIComponent(recent.trackingId) + '" target="_blank" rel="noopener" class="ml-auto font-label-sm text-label-sm text-primary underline underline-offset-2">Track on Delhivery</a>') : '')
         + '</div>')
     : '';
   el.innerHTML = '<p class="font-body-md text-body-md text-on-surface-variant mb-6">Order #' + recent.orderNumber + ' &middot; Estimated Delivery: ' + eta + '</p>'
