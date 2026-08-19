@@ -124,13 +124,13 @@ body{ -webkit-font-smoothing:antialiased; }
 <div class="text-center mb-10" data-reveal>
 <span class="material-symbols-outlined text-primary text-[36px] mb-3 inline-block">local_shipping</span>
 <h1 class="font-headline-lg text-headline-lg text-on-surface mb-2">Track Your Order</h1>
-<p class="font-body-md text-body-md text-on-surface-variant">No account needed — just your order number and the phone or email you used at checkout.</p>
+<p class="font-body-md text-body-md text-on-surface-variant">No account needed — enter both your order number and the phone or email you used at checkout.</p>
 </div>
 
 <form id="track-form" novalidate class="bg-surface-container-low border border-outline-variant/20 p-6 md:p-8 mb-8" data-reveal>
 <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6">
 <div class="field"><input id="tr-order-number" class="font-body-md text-body-md text-on-surface" placeholder=" " required type="text"/><label>Order Number (e.g. MC-A2FC9F)</label></div>
-<div class="field"><input id="tr-contact" class="font-body-md text-body-md text-on-surface" placeholder=" " required type="text"/><label>Phone or Email</label></div>
+<div class="field"><input id="tr-contact" class="font-body-md text-body-md text-on-surface" placeholder=" " required type="text"/><label>Phone or Email Used at Checkout</label></div>
 </div>
 <p id="track-error" class="hidden font-label-sm text-label-sm text-error mt-4"></p>
 <button id="track-submit-btn" type="submit" class="btn w-full mt-6 bg-primary text-on-primary font-label-md text-label-md uppercase tracking-widest py-3.5 hover:opacity-90 transition-opacity flex items-center justify-center gap-2">Track Order <span class="material-symbols-outlined text-lg">search</span></button>
