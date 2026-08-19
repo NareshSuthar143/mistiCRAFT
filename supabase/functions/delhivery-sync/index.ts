@@ -1,15 +1,18 @@
 // mistiCRAFT — Delhivery tracking sync
 //
 // Polls Delhivery's Track API for every in-progress order shipped via
-// Delhivery, and appends a tracking_events row whenever the shipment's
-// stage has advanced. tracking_events already has a DB trigger (see
+// Delhivery, and appends a tracking_events row whenever the shipment has
+// moved — either the coarse stage advanced, or Delhivery logged a new
+// scan within the same stage (e.g. "in transit" for days while it moves
+// through hub after hub). tracking_events already has a DB trigger (see
 // schema.sql) that keeps customer_orders.status in sync automatically,
 // so this function only ever needs to write to tracking_events.
 //
 // Each event's note carries the scan description plus the scanned
 // location (e.g. "Manifested — Udaipur_Balicha_H (Rajasthan)"), taken
 // from Delhivery's own Scans[].ScanDetail, so the customer's timeline
-// on track.html shows real transit detail, not just the coarse stage.
+// on track.html shows real transit detail, not just the coarse stage —
+// and keeps moving even while the coarse stage itself hasn't changed.
 //
 // Invoked on a schedule by pg_cron + pg_net (see schema.sql). Runs with
 // no caller auth (verify_jwt: false) since it takes no input from the
@@ -93,20 +96,30 @@ Deno.serve(async (_req: Request) => {
 
       const { data: lastEvent } = await supabase
         .from("tracking_events")
-        .select("stage")
+        .select("stage, note")
         .eq("order_id", order.id)
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle();
       const lastRank = lastEvent ? STAGE_RANK[lastEvent.stage] ?? -1 : -1;
-      if (STAGE_RANK[stage] <= lastRank) {
-        results.push({ order: order.id, waybill, skipped: "no forward progress", stage });
-        continue;
-      }
+      const stageRank = STAGE_RANK[stage];
 
       const scanText = latestScan?.ScanDetail?.Scan || null;
       const location = latestScan?.ScanDetail?.ScannedLocation || shipment.Status?.StatusLocation || null;
       const note = scanText && location ? `${scanText} — ${location}` : (scanText || location || null);
+
+      if (stageRank < lastRank) {
+        results.push({ order: order.id, waybill, skipped: "stage regressed", stage });
+        continue;
+      }
+      // Same stage as last time: only worth a new row if Delhivery logged
+      // a genuinely new scan (fresh note) — otherwise every 10-minute poll
+      // would spam the timeline with identical "Shipped" rows.
+      if (stageRank === lastRank && (!note || note === lastEvent?.note)) {
+        results.push({ order: order.id, waybill, skipped: "no new scan", stage });
+        continue;
+      }
+
       const { error: insertError } = await supabase.from("tracking_events").insert({ order_id: order.id, stage, note });
       if (insertError) {
         results.push({ order: order.id, waybill, error: insertError.message });
