@@ -425,6 +425,32 @@ as $$
 $$;
 grant execute on function track_order(text, text) to anon, authenticated;
 
+-- ---------- Customer-facing lookup: phone or email alone ----------
+-- Order number alone is deliberately NOT enough to look up an order —
+-- it's a 6-character code (~16.7M possible values), so allowing it on
+-- its own would let anyone who guesses one pull up a stranger's name,
+-- address, phone, and email. Phone/email alone is safe by comparison
+-- (it's already the "you must know something about this customer"
+-- factor track_order uses) so a customer who doesn't have their order
+-- number handy can look up their own recent orders by contact only —
+-- summary fields only, no address, capped at the 10 most recent.
+create or replace function track_orders_by_contact(p_contact text)
+returns table (
+  order_number text, status text, total numeric, created_at timestamptz
+)
+language sql
+security definer
+set search_path = public
+as $$
+  select o.order_number, o.status, o.total, o.created_at
+  from customer_orders o
+  where p_contact is not null and length(trim(p_contact)) > 0
+    and (o.contact->>'email' = p_contact or o.contact->>'phone' = p_contact)
+  order by o.created_at desc
+  limit 10;
+$$;
+grant execute on function track_orders_by_contact(text) to anon, authenticated;
+
 -- ---------- Delhivery live tracking sync ----------
 -- Every order shipped via Delhivery (admin sets transporter = "Delhivery"
 -- plus the waybill number as tracking_id, same Shipping Logistics modal

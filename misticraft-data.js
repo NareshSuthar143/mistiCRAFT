@@ -569,6 +569,19 @@
       };
     } catch (e) { console.error('mistiCRAFT trackOrder error', e); return null; }
   }
+  /* Customer-facing: look up recent orders by phone or email alone (no
+     order number needed) — summary fields only, for when a customer
+     doesn't have their order number handy. Pick one to see full detail
+     via trackOrder(orderNumber, contact). */
+  async function trackOrdersByContact(contact) {
+    try {
+      var res = await db().rpc('track_orders_by_contact', { p_contact: String(contact || '').trim() });
+      if (res.error) throw res.error;
+      return (res.data || []).map(function (row) {
+        return { orderNumber: row.order_number, status: row.status, total: row.total, createdAt: row.created_at ? new Date(row.created_at).getTime() : Date.now() };
+      });
+    } catch (e) { console.error('mistiCRAFT trackOrdersByContact error', e); return []; }
+  }
   async function decrementStock(items) {
     try {
       var client = db();
@@ -692,6 +705,7 @@
     uploadInvoicePdf: uploadInvoicePdf,
     uploadImage: uploadImage,
     STAGE_LABELS: STAGE_LABELS,
-    trackOrder: trackOrder
+    trackOrder: trackOrder,
+    trackOrdersByContact: trackOrdersByContact
   };
 })(window);

@@ -124,12 +124,12 @@ body{ -webkit-font-smoothing:antialiased; }
 <div class="text-center mb-10" data-reveal>
 <span class="material-symbols-outlined text-primary text-[36px] mb-3 inline-block">local_shipping</span>
 <h1 class="font-headline-lg text-headline-lg text-on-surface mb-2">Track Your Order</h1>
-<p class="font-body-md text-body-md text-on-surface-variant">No account needed — enter both your order number and the phone or email you used at checkout.</p>
+<p class="font-body-md text-body-md text-on-surface-variant">No account needed — enter the phone or email you used at checkout. Add your order number too if you have it handy, or leave it blank to see all your recent orders.</p>
 </div>
 
 <form id="track-form" novalidate class="bg-surface-container-low border border-outline-variant/20 p-6 md:p-8 mb-8" data-reveal>
 <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6">
-<div class="field"><input id="tr-order-number" class="font-body-md text-body-md text-on-surface" placeholder=" " required type="text"/><label>Order Number (e.g. MC-A2FC9F)</label></div>
+<div class="field"><input id="tr-order-number" class="font-body-md text-body-md text-on-surface" placeholder=" " type="text"/><label>Order Number (optional)</label></div>
 <div class="field"><input id="tr-contact" class="font-body-md text-body-md text-on-surface" placeholder=" " required type="text"/><label>Phone or Email Used at Checkout</label></div>
 </div>
 <p id="track-error" class="hidden font-label-sm text-label-sm text-error mt-4"></p>
@@ -169,7 +169,12 @@ body{ -webkit-font-smoothing:antialiased; }
 
 <div id="track-empty" class="hidden text-center py-8" data-reveal>
 <span class="material-symbols-outlined text-on-surface-variant text-[40px] mb-3 inline-block">search_off</span>
-<p class="font-body-md text-body-md text-on-surface-variant">We couldn&rsquo;t find a matching order. Double-check your order number and the phone/email you used at checkout.</p>
+<p class="font-body-md text-body-md text-on-surface-variant" id="track-empty-text">We couldn&rsquo;t find a matching order. Double-check your order number and the phone/email you used at checkout.</p>
+</div>
+
+<div id="track-list" class="hidden" data-reveal>
+<h3 class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest mb-4">Orders for this phone/email</h3>
+<div id="track-list-items" class="space-y-3"></div>
 </div>
 </main>
 
@@ -314,23 +319,55 @@ function renderTrackResult(order){
   qs('#track-empty').classList.add('hidden');
 }
 
+function trackOrderRowHTML(o){
+  const dateStr = new Date(o.createdAt).toLocaleDateString('en-IN', {month:'short', day:'numeric', year:'numeric'});
+  return '<button type="button" class="track-list-row w-full text-left bg-surface border border-outline-variant/40 p-4 flex items-center justify-between gap-4 hover:border-primary transition-colors" data-order="' + trackEsc(o.orderNumber) + '">'
+    + '<div><p class="font-label-md text-label-md text-on-surface">' + trackEsc(o.orderNumber) + '</p><p class="font-label-sm text-label-sm text-on-surface-variant">' + dateStr + ' &middot; ' + trackEsc(o.status) + '</p></div>'
+    + '<p class="font-label-md text-label-md text-primary">' + mistiData.formatINR(o.total) + '</p>'
+    + '</button>';
+}
+
 async function runLookup(showErrors){
   const orderNumber = qs('#tr-order-number').value.trim().toUpperCase();
   const contact = qs('#tr-contact').value.trim();
   const errorEl = qs('#track-error');
   errorEl.classList.add('hidden');
-  if(!orderNumber || !contact){
-    if(showErrors){ errorEl.textContent = 'Enter both your order number and phone/email.'; errorEl.classList.remove('hidden'); }
+  if(!contact){
+    if(showErrors){ errorEl.textContent = 'Enter the phone or email you used at checkout.'; errorEl.classList.remove('hidden'); }
     return;
   }
   const btn = qs('#track-submit-btn');
   const originalLabel = btn.innerHTML;
   if(showErrors){ btn.setAttribute('disabled','disabled'); btn.innerHTML = 'Searching&hellip;'; }
+
+  if(!orderNumber){
+    // No order number given — list every recent order for this contact
+    // so the customer can pick one, instead of requiring it up front.
+    LAST_LOOKUP = null;
+    const orders = await mistiData.trackOrdersByContact(contact);
+    if(showErrors){ btn.removeAttribute('disabled'); btn.innerHTML = originalLabel; }
+    qs('#track-result').classList.add('hidden');
+    if(!orders.length){
+      if(showErrors){
+        qs('#track-list').classList.add('hidden');
+        qs('#track-empty-text').textContent = "We couldn't find any orders for that phone/email.";
+        qs('#track-empty').classList.remove('hidden');
+      }
+      return;
+    }
+    qs('#track-empty').classList.add('hidden');
+    qs('#track-list-items').innerHTML = orders.map(trackOrderRowHTML).join('');
+    qs('#track-list').classList.remove('hidden');
+    return;
+  }
+
   const order = await mistiData.trackOrder(orderNumber, contact);
   if(showErrors){ btn.removeAttribute('disabled'); btn.innerHTML = originalLabel; }
+  qs('#track-list').classList.add('hidden');
   if(!order){
     if(showErrors){
       qs('#track-result').classList.add('hidden');
+      qs('#track-empty-text').textContent = "We couldn't find a matching order. Double-check your order number and the phone/email you used at checkout.";
       qs('#track-empty').classList.remove('hidden');
     }
     return;
@@ -350,6 +387,13 @@ qs('#track-form').addEventListener('submit', function(e){
   runLookup(true);
 });
 
+qs('#track-list-items').addEventListener('click', function(e){
+  const row = e.target.closest('.track-list-row');
+  if(!row) return;
+  qs('#tr-order-number').value = row.dataset.order;
+  runLookup(true);
+});
+
 /* Deep-link support: track.html?order=MC-XXXXXX&contact=... */
 (function(){
   const params = new URLSearchParams(window.location.search);
@@ -357,7 +401,7 @@ qs('#track-form').addEventListener('submit', function(e){
   const c = params.get('contact');
   if(o) qs('#tr-order-number').value = o;
   if(c) qs('#tr-contact').value = c;
-  if(o && c) runLookup(true);
+  if(c) runLookup(true);
 })();
 
 </script>
