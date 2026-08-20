@@ -71,7 +71,14 @@ Deno.serve(async (req: Request) => {
       `https://track.delhivery.com/api/p/packing_slip/?wbns=${encodeURIComponent(waybill)}&pdf=true`,
       { headers: { Authorization: `Token ${DELHIVERY_API_TOKEN}` } }
     );
-    if (!res.ok) return json({ error: `Delhivery label HTTP ${res.status}` }, 502);
+    if (!res.ok) {
+      if (res.status === 401) {
+        return json({
+          error: `Delhivery rejected the label request (waybill ${waybill} was created fine, so this isn't an order problem). Your API token doesn't have Packing Slip API access — this is a separate permission from Track/Shipment-Create in Delhivery's dashboard. Ask your Delhivery account manager to enable "Packing Slip API" for your token, or download the label manually from your Delhivery dashboard using this waybill in the meantime.`,
+        }, 502);
+      }
+      return json({ error: `Delhivery label HTTP ${res.status}` }, 502);
+    }
     const buf = new Uint8Array(await res.arrayBuffer());
     let binary = "";
     for (let i = 0; i < buf.length; i++) binary += String.fromCharCode(buf[i]);
