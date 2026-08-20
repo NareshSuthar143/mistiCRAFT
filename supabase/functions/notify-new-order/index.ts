@@ -154,8 +154,11 @@ Deno.serve(async (req: Request) => {
     out.email = { skipped: "RESEND_API_KEY / RESEND_FROM not set" };
   } else {
     const { data: settings } = await supabase.from("settings").select("store_email").eq("id", 1).maybeSingle();
-    const to = settings?.store_email;
-    if (!to) {
+    // store_email supports comma/semicolon-separated addresses (e.g.
+    // "owner@x.com, meena@x.com") so the alert can go to more than one
+    // person — same field the invoice header also reads, just split here.
+    const to = String(settings?.store_email || "").split(/[,;]/).map((s) => s.trim()).filter(Boolean);
+    if (!to.length) {
       out.email = { skipped: "no store_email configured in Settings" };
     } else {
       try {
