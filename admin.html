@@ -12,6 +12,7 @@
 <script src="misticraft-data.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/4.0.0/jspdf.umd.min.js"></script>
 <script src="invoice.js"></script>
+<script src="label.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin=""/>
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,400;0,500;0,600;0,700;1,400&amp;family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&amp;display=swap" rel="stylesheet"/>
@@ -669,6 +670,7 @@ body[data-page="admin"]{ background:#fbf9f4; }
 <p class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest mb-3">Shipping Label</p>
 <button type="button" id="lg-auto-create-btn" onclick="autoCreateDelhiveryLabel()" class="btn w-full py-3 bg-secondary text-on-secondary font-label-sm text-label-sm uppercase tracking-widest hover:brightness-110 flex items-center justify-center gap-2"><span class="material-symbols-outlined text-[18px]">bolt</span> Auto-Create Delhivery Label</button>
 <button type="button" id="lg-download-label-btn" onclick="downloadDelhiveryLabel()" class="hidden btn w-full py-3 mt-2 border border-secondary text-secondary font-label-sm text-label-sm uppercase tracking-widest hover:bg-secondary hover:text-on-secondary transition-colors flex items-center justify-center gap-2"><span class="material-symbols-outlined text-[18px]">download</span> Download Label PDF</button>
+<button type="button" id="lg-print-custom-label-btn" onclick="printCustomLabel()" class="hidden btn w-full py-3 mt-2 border border-outline-variant text-on-surface font-label-sm text-label-sm uppercase tracking-widest hover:bg-surface-container-high transition-colors flex items-center justify-center gap-2"><span class="material-symbols-outlined text-[18px]">receipt</span> Print Custom Label</button>
 <p id="lg-auto-create-status" class="hidden font-label-sm text-label-sm mt-2"></p>
 </div>
 
@@ -1764,6 +1766,7 @@ function refreshLogisticsAutoCreateUI(){
   const hasWaybill = !!(qs('#lg-transporter').value.trim() && qs('#lg-tracking-id').value.trim());
   qs('#lg-auto-create-btn').classList.toggle('hidden', hasWaybill);
   qs('#lg-download-label-btn').classList.toggle('hidden', !hasWaybill);
+  qs('#lg-print-custom-label-btn').classList.toggle('hidden', !hasWaybill);
   qs('#lg-auto-create-status').classList.add('hidden');
 }
 function orderAddressHTML(o){
@@ -1873,6 +1876,14 @@ async function downloadDelhiveryLabel(){
     btn.removeAttribute('disabled');
   }
 }
+function printCustomLabel(){
+  const orderId = qs('#lg-order-id').value;
+  const order = LIVE_CUSTOMER_ORDERS.find(function(o){ return o.id === orderId; });
+  if(!order){ toast('Order not found', 'error'); return; }
+  const ok = window.mistiLabel && window.mistiLabel.generate(order, LATEST_SETTINGS);
+  if(!ok) toast('Could not generate label — check your connection', 'error');
+}
+window.printCustomLabel = printCustomLabel;
 window.openOrderDetailsModal = openOrderDetailsModal;
 window.closeLogisticsModal = closeLogisticsModal;
 window.saveLogistics = saveLogistics;
