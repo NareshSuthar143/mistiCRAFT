@@ -548,6 +548,10 @@ for each row execute function trigger_delhivery_auto_create();
 -- service role to push a real OS notification on every new order, even
 -- with the dashboard tab closed. VAPID_PUBLIC_KEY / VAPID_PRIVATE_KEY /
 -- VAPID_SUBJECT are Edge Function secrets, never stored here.
+-- The same function also emails settings.store_email via Resend
+-- (RESEND_API_KEY / RESEND_FROM secrets) as a second, independent
+-- channel — either channel can be left unconfigured without affecting
+-- the other or blocking checkout.
 create table if not exists push_subscriptions (
   id uuid primary key default gen_random_uuid(),
   uid uuid not null references auth.users(id) on delete cascade,
