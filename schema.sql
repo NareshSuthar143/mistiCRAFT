@@ -507,3 +507,35 @@ alter table settings add column if not exists default_package_weight_grams numer
 alter table settings add column if not exists default_package_length_cm numeric not null default 30;
 alter table settings add column if not exists default_package_width_cm numeric not null default 25;
 alter table settings add column if not exists default_package_height_cm numeric not null default 5;
+
+-- ---------- Auto-create the Delhivery shipment right at checkout ----------
+-- Fires the delhivery-auto-create Edge Function on every new customer
+-- order so a waybill exists as soon as checkout completes, instead of
+-- waiting on the admin's manual "Auto-Create Delhivery Label" click.
+-- This does not request a Delhivery pickup — Delhivery only collects a
+-- package once a pickup is separately requested, so the shipment just
+-- sits uncollected (like a draft) until the order is actually packed
+-- a few days later. Any failure (pickup location unset, bad address,
+-- Delhivery rejection) is swallowed inside the function itself; the
+-- admin's manual button remains the retry path either way, so this
+-- trigger never blocks or fails checkout.
+create or replace function trigger_delhivery_auto_create()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  perform net.http_post(
+    url := 'https://pdntxosjtacqgvzavtio.supabase.co/functions/v1/delhivery-auto-create',
+    headers := '{"Content-Type":"application/json"}'::jsonb,
+    body := jsonb_build_object('order_id', new.id)
+  );
+  return new;
+end;
+$$;
+
+drop trigger if exists delhivery_auto_create_on_order on customer_orders;
+create trigger delhivery_auto_create_on_order
+after insert on customer_orders
+for each row execute function trigger_delhivery_auto_create();
