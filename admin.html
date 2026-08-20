@@ -476,6 +476,19 @@ body[data-page="admin"]{ background:#fbf9f4; }
 <div class="field filled"><input id="set-upi-id" type="text" placeholder=" "/><label>UPI ID (VPA) — e.g. yourshop@okhdfcbank</label></div>
 <div class="field filled"><input id="set-upi-payee-name" type="text" placeholder=" "/><label>Payee Name (shown to customers)</label></div>
 <div class="mt-4">
+<p class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest mb-1">Delhivery Auto-Label</p>
+<p class="font-label-sm text-label-sm text-on-surface-variant mb-3">Needed to auto-create shipping labels from an order's Shipping Logistics modal. Pickup location must exactly match a location already registered in your Delhivery dashboard (Settings &rarr; Warehouse/Client Setup) — a mismatch makes every label creation fail.</p>
+</div>
+<div class="field filled"><input id="set-delhivery-pickup-location" type="text" placeholder=" "/><label>Delhivery Pickup Location Name</label></div>
+<div class="grid grid-cols-2 gap-4">
+<div class="field filled"><input id="set-default-package-weight" type="number" min="0" step="1" placeholder=" "/><label>Default Package Weight (g)</label></div>
+<div class="field filled"><input id="set-default-package-length" type="number" min="0" step="1" placeholder=" "/><label>Length (cm)</label></div>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div class="field filled"><input id="set-default-package-width" type="number" min="0" step="1" placeholder=" "/><label>Width (cm)</label></div>
+<div class="field filled"><input id="set-default-package-height" type="number" min="0" step="1" placeholder=" "/><label>Height (cm)</label></div>
+</div>
+<div class="mt-4">
 <p class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest mb-1">Homepage Hero — photos &amp; videos</p>
 <p class="font-label-sm text-label-sm text-on-surface-variant mb-3">Add as many as you like — the homepage cycles through them in order. The first one shows first.</p>
 <div id="hero-gallery" class="grid grid-cols-4 sm:grid-cols-5 gap-3 mb-3"></div>
@@ -537,6 +550,7 @@ body[data-page="admin"]{ background:#fbf9f4; }
 <div class="field filled"><input id="pf-mrp" type="number" min="0" step="1" placeholder=" " required/><label>MRP (₹)</label></div>
 <div class="field filled"><input id="pf-stock" type="number" min="0" step="1" placeholder=" " required/><label>Stock (units)</label></div>
 </div>
+<div class="field filled max-w-[200px]"><input id="pf-weight" type="number" min="0" step="1" placeholder=" "/><label>Weight (g) — for shipping</label></div>
 <div class="flex flex-col gap-3">
 <label class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">Photos</label>
 <div id="pf-gallery" class="grid grid-cols-4 sm:grid-cols-5 gap-3"></div>
@@ -659,6 +673,11 @@ body[data-page="admin"]{ background:#fbf9f4; }
 <button onclick="closeLogisticsModal()" class="text-on-surface-variant hover:text-primary transition-colors" aria-label="Close"><span class="material-symbols-outlined">close</span></button>
 </div>
 <p class="font-label-sm text-label-sm text-on-surface-variant mb-6">Order <span id="lg-order-number" class="text-primary font-medium"></span></p>
+<div class="mb-6 p-4 bg-surface-container-low rounded border border-outline-variant/20">
+<button type="button" id="lg-auto-create-btn" onclick="autoCreateDelhiveryLabel()" class="btn w-full py-3 bg-secondary text-on-secondary font-label-sm text-label-sm uppercase tracking-widest hover:brightness-110 flex items-center justify-center gap-2"><span class="material-symbols-outlined text-[18px]">bolt</span> Auto-Create Delhivery Label</button>
+<button type="button" id="lg-download-label-btn" onclick="downloadDelhiveryLabel()" class="hidden btn w-full py-3 mt-2 border border-secondary text-secondary font-label-sm text-label-sm uppercase tracking-widest hover:bg-secondary hover:text-on-secondary transition-colors flex items-center justify-center gap-2"><span class="material-symbols-outlined text-[18px]">download</span> Download Label PDF</button>
+<p id="lg-auto-create-status" class="hidden font-label-sm text-label-sm mt-2"></p>
+</div>
 <form onsubmit="return false;" class="flex flex-col gap-6">
 <input type="hidden" id="lg-order-id"/>
 <div class="field filled"><input id="lg-transporter" placeholder=" "/><label>Transporter Name</label></div>
@@ -1044,6 +1063,7 @@ function openProductModal(id){
     qs('#pf-price').value = p.price;
     qs('#pf-mrp').value = p.mrp;
     qs('#pf-stock').value = p.stock;
+    qs('#pf-weight').value = p.weight_grams != null ? p.weight_grams : '';
     PF_IMAGES = (p.images && p.images.length) ? p.images.slice() : (p.img ? [p.img] : []);
     qs('#pf-image-fit').value = p.image_fit || 'cover';
     qs('#pf-status').value = p.status;
@@ -1059,6 +1079,7 @@ function openProductModal(id){
     qs('#pf-price').value = '';
     qs('#pf-mrp').value = '';
     qs('#pf-stock').value = '';
+    qs('#pf-weight').value = '';
     PF_IMAGES = [];
     qs('#pf-image-fit').value = 'cover';
     qs('#pf-status').value = 'active';
@@ -1119,12 +1140,14 @@ async function saveProduct(){
   const existingId = qs('#pf-id').value;
   const fallbackImg = 'https://lh3.googleusercontent.com/aida-public/AB6AXuAqsyX3913LsvZBSkdz8wmnx0qs5jhxRU6vzb1dKFMNQZK7Os41syw7n5oReCHBnsloXIwYAzPb42HqTNeG3t4NPOftmYradAxWRJXnzNv1YSu0FJHcA5V8vCDGSajw1IV_po9eHQ-rOwSfVTNHz4e0nIyxzK03l4Z1dVfuz3k-9R-ojEZ-mvmLXe0VL4v-5QPRK6fIO7emhDMS9BIwdHvFzxhoG4aUqPiqbMAd0JcObXV9h1vunaZG97FDbRosZqwRv60p2tq-I4RK';
   const images = PF_IMAGES.length ? PF_IMAGES.slice() : [fallbackImg];
+  const weightRaw = qs('#pf-weight').value.trim();
   const data = {
     id: existingId || mistiData.slugify(name),
     name, tagline: qs('#pf-tagline').value.trim(),
     category: qs('#pf-category').value,
     technique: qs('#pf-technique').value,
     price, mrp, stock,
+    weight_grams: weightRaw === '' ? null : parseFloat(weightRaw),
     status: qs('#pf-status').value,
     rank: qs('#pf-rank').value,
     featured: qs('#pf-featured').checked,
@@ -1720,6 +1743,11 @@ async function saveStoreSettings(){
     default_transporter: qs('#set-default-transporter').value.trim(),
     upi_id: qs('#set-upi-id').value.trim(),
     upi_payee_name: qs('#set-upi-payee-name').value.trim(),
+    delhivery_pickup_location: qs('#set-delhivery-pickup-location').value.trim(),
+    default_package_weight_grams: parseFloat(qs('#set-default-package-weight').value) || 500,
+    default_package_length_cm: parseFloat(qs('#set-default-package-length').value) || 30,
+    default_package_width_cm: parseFloat(qs('#set-default-package-width').value) || 25,
+    default_package_height_cm: parseFloat(qs('#set-default-package-height').value) || 5,
     hero_media: HERO_MEDIA
   };
   const ok = await mistiData.saveSettings(patch);
@@ -1736,17 +1764,29 @@ function hydrateSettingsForm(s){
   qs('#set-default-transporter').value = s.default_transporter || '';
   qs('#set-upi-id').value = s.upi_id || '';
   qs('#set-upi-payee-name').value = s.upi_payee_name || '';
+  qs('#set-delhivery-pickup-location').value = s.delhivery_pickup_location || '';
+  qs('#set-default-package-weight').value = s.default_package_weight_grams != null ? s.default_package_weight_grams : 500;
+  qs('#set-default-package-length').value = s.default_package_length_cm != null ? s.default_package_length_cm : 30;
+  qs('#set-default-package-width').value = s.default_package_width_cm != null ? s.default_package_width_cm : 25;
+  qs('#set-default-package-height').value = s.default_package_height_cm != null ? s.default_package_height_cm : 5;
   HERO_MEDIA = (s.hero_media && s.hero_media.length) ? s.hero_media.slice() : (s.hero_media_url ? [s.hero_media_url] : []);
   renderHeroGallery();
 }
 
 /* ---------- Order logistics modal ---------- */
+function refreshLogisticsAutoCreateUI(){
+  const hasWaybill = !!(qs('#lg-transporter').value.trim() && qs('#lg-tracking-id').value.trim());
+  qs('#lg-auto-create-btn').classList.toggle('hidden', hasWaybill);
+  qs('#lg-download-label-btn').classList.toggle('hidden', !hasWaybill);
+  qs('#lg-auto-create-status').classList.add('hidden');
+}
 function openLogisticsModal(orderId, orderNumber, transporter, trackingId){
   qs('#lg-order-id').value = orderId;
   qs('#lg-order-number').textContent = orderNumber;
   qs('#lg-transporter').value = transporter || '';
   qs('#lg-tracking-id').value = trackingId || '';
   qs('#logistics-modal-error').classList.add('hidden');
+  refreshLogisticsAutoCreateUI();
   const modal = qs('#logistics-modal');
   modal.classList.remove('hidden');
   modal.classList.add('flex');
@@ -1772,9 +1812,67 @@ async function saveLogistics(){
     errorEl.classList.remove('hidden');
   }
 }
+async function autoCreateDelhiveryLabel(){
+  const orderId = qs('#lg-order-id').value;
+  const btn = qs('#lg-auto-create-btn');
+  const statusEl = qs('#lg-auto-create-status');
+  btn.setAttribute('disabled', 'disabled');
+  statusEl.className = 'font-label-sm text-label-sm mt-2 text-on-surface-variant';
+  statusEl.textContent = 'Creating shipment with Delhivery…';
+  statusEl.classList.remove('hidden');
+  try {
+    const result = await mistiData.createDelhiveryShipment(orderId, 'create');
+    qs('#lg-transporter').value = 'Delhivery';
+    qs('#lg-tracking-id').value = result.waybill;
+    refreshLogisticsAutoCreateUI();
+    statusEl.className = 'font-label-sm text-label-sm mt-2 text-primary';
+    statusEl.textContent = 'Shipment created — waybill ' + result.waybill + '. Click Save to confirm.';
+    statusEl.classList.remove('hidden');
+    toast('Delhivery shipment created', 'local_shipping');
+  } catch (e) {
+    statusEl.className = 'font-label-sm text-label-sm mt-2 text-error';
+    statusEl.textContent = e.message || 'Could not create shipment.';
+    statusEl.classList.remove('hidden');
+  } finally {
+    btn.removeAttribute('disabled');
+  }
+}
+async function downloadDelhiveryLabel(){
+  const orderId = qs('#lg-order-id').value;
+  const btn = qs('#lg-download-label-btn');
+  const statusEl = qs('#lg-auto-create-status');
+  btn.setAttribute('disabled', 'disabled');
+  statusEl.className = 'font-label-sm text-label-sm mt-2 text-on-surface-variant';
+  statusEl.textContent = 'Fetching label…';
+  statusEl.classList.remove('hidden');
+  try {
+    const result = await mistiData.createDelhiveryShipment(orderId, 'label');
+    const byteChars = atob(result.pdfBase64);
+    const bytes = new Uint8Array(byteChars.length);
+    for(let i = 0; i < byteChars.length; i++) bytes[i] = byteChars.charCodeAt(i);
+    const blob = new Blob([bytes], {type: 'application/pdf'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'delhivery-label-' + result.waybill + '.pdf';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    statusEl.classList.add('hidden');
+  } catch (e) {
+    statusEl.className = 'font-label-sm text-label-sm mt-2 text-error';
+    statusEl.textContent = e.message || 'Could not fetch label.';
+    statusEl.classList.remove('hidden');
+  } finally {
+    btn.removeAttribute('disabled');
+  }
+}
 window.openLogisticsModal = openLogisticsModal;
 window.closeLogisticsModal = closeLogisticsModal;
 window.saveLogistics = saveLogistics;
+window.autoCreateDelhiveryLabel = autoCreateDelhiveryLabel;
+window.downloadDelhiveryLabel = downloadDelhiveryLabel;
 
 /* ---------- Analytics ---------- */
 function analyticsBarRow(label, value, max, colorClass){

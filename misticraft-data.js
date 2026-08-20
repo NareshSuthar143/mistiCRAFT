@@ -547,6 +547,28 @@
     var pub = client.storage.from('invoices').getPublicUrl(path);
     return pub.data.publicUrl;
   }
+  /* Admin-only: create a Delhivery shipment (waybill) for an order, or
+     fetch its packing-slip label PDF, via the delhivery-create-shipment
+     Edge Function — see that function for why this can't be done with a
+     plain RPC (it needs a real HTTP call to Delhivery with a secret
+     token that must never reach the browser). functions.invoke()
+     automatically forwards the caller's own session token, which the
+     function uses to verify admin access itself. */
+  async function createDelhiveryShipment(orderId, action) {
+    var res = await db().functions.invoke('delhivery-create-shipment', { body: { order_id: orderId, action: action || 'create' } });
+    if (res.error) {
+      var msg = res.error.message || 'Request failed';
+      try {
+        if (res.error.context && typeof res.error.context.json === 'function') {
+          var body = await res.error.context.json();
+          if (body && body.error) msg = body.error;
+        }
+      } catch (_e) { /* couldn't parse the error body — fall back to the generic message */ }
+      throw new Error(msg);
+    }
+    if (res.data && res.data.error) throw new Error(res.data.error);
+    return res.data;
+  }
   /* Customer-facing: look up an order with no login, by order number
      plus the phone or email used at checkout. */
   async function trackOrder(orderNumber, contact) {
@@ -690,6 +712,7 @@
     wishlist: { get: wishlistGet, set: wishlistSet, subscribe: wishlistSubscribe, toggle: wishlistToggle },
     orders: { create: createOrder, subscribeAll: subscribeCustomerOrders, subscribeForUser: subscribeUserOrders, updateStatus: updateCustomerOrderStatus, updateLogistics: updateOrderLogistics, decrementStock: decrementStock },
     uploadInvoicePdf: uploadInvoicePdf,
+    createDelhiveryShipment: createDelhiveryShipment,
     uploadImage: uploadImage,
     STAGE_LABELS: STAGE_LABELS,
     trackOrder: trackOrder
