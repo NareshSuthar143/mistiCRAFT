@@ -489,3 +489,21 @@ for update using (
   )
 );
 
+
+-- ---------- Delhivery auto-generated shipping labels ----------
+-- Optional per-product weight, used when auto-creating a Delhivery
+-- shipment; falls back to settings.default_package_weight_grams per
+-- item when a product doesn't specify one.
+alter table products add column if not exists weight_grams numeric;
+
+-- Delhivery shipment-creation config: pickup_location must exactly
+-- match a location already registered in the merchant's Delhivery
+-- dashboard, or every create-shipment call fails. Package dimensions
+-- are store-wide defaults (combining multiple products' dimensions
+-- into one box size isn't practical, so only weight is summed
+-- per-item; L/W/H always use these).
+alter table settings add column if not exists delhivery_pickup_location text;
+alter table settings add column if not exists default_package_weight_grams numeric not null default 500;
+alter table settings add column if not exists default_package_length_cm numeric not null default 30;
+alter table settings add column if not exists default_package_width_cm numeric not null default 25;
+alter table settings add column if not exists default_package_height_cm numeric not null default 5;
