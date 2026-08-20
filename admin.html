@@ -184,7 +184,6 @@ body[data-page="admin"]{ background:#fbf9f4; }
 <a href="#" data-target="analytics" class="admin-tab flex items-center gap-3 px-4 py-3 rounded text-on-surface-variant hover:bg-surface-container-high transition-colors font-label-md text-label-md"><span class="material-symbols-outlined">trending_up</span> Sales Analytics</a>
 <a href="#" data-target="customer-orders" class="admin-tab flex items-center gap-3 px-4 py-3 rounded text-on-surface-variant hover:bg-surface-container-high transition-colors font-label-md text-label-md"><span class="material-symbols-outlined">shopping_bag</span> Customer Orders</a>
 <a href="#" data-target="orders" class="admin-tab flex items-center gap-3 px-4 py-3 rounded text-on-surface-variant hover:bg-surface-container-high transition-colors font-label-md text-label-md"><span class="material-symbols-outlined">local_shipping</span> Order Fulfillment</a>
-<a href="#" data-target="invoices" class="admin-tab flex items-center gap-3 px-4 py-3 rounded text-on-surface-variant hover:bg-surface-container-high transition-colors font-label-md text-label-md"><span class="material-symbols-outlined">receipt_long</span> Invoices</a>
 <a href="#" data-target="artisans" class="admin-tab flex items-center gap-3 px-4 py-3 rounded text-on-surface-variant hover:bg-surface-container-high transition-colors font-label-md text-label-md"><span class="material-symbols-outlined">groups</span> Artisan Profiles</a>
 <a href="#" data-target="founders" class="admin-tab flex items-center gap-3 px-4 py-3 rounded text-on-surface-variant hover:bg-surface-container-high transition-colors font-label-md text-label-md"><span class="material-symbols-outlined">badge</span> Leadership</a>
 </nav>
@@ -422,24 +421,6 @@ body[data-page="admin"]{ background:#fbf9f4; }
 </div>
 </div>
 
-<div id="tab-invoices" data-tab-content class="hidden">
-<div class="mb-8">
-<h1 class="font-headline-lg text-headline-lg text-primary">Invoices</h1>
-<p class="font-body-md text-body-md text-on-surface-variant mt-1">Download or share a tax invoice for any customer order.</p>
-</div>
-<div class="bg-surface rounded-lg border border-outline-variant/30 p-6">
-<div class="overflow-x-auto -mx-2">
-<table class="w-full text-left border-collapse min-w-[640px]">
-<thead><tr class="border-b border-outline-variant/30 text-on-surface-variant font-label-sm text-label-sm uppercase tracking-wider">
-<th class="py-3 px-2 font-medium">Order #</th><th class="py-3 px-2 font-medium">Customer</th><th class="py-3 px-2 font-medium text-right">Total</th><th class="py-3 px-2 font-medium">Placed</th><th class="py-3 px-2 font-medium text-right">Actions</th>
-</tr></thead>
-<tbody id="invoices-table-body" class="font-body-md text-body-md text-on-surface"></tbody>
-</table>
-</div>
-<p id="invoices-empty" class="hidden text-center text-on-surface-variant py-8">No customer orders yet — invoices will appear here once someone checks out.</p>
-</div>
-</div>
-
 <!-- ============ ARTISAN PROFILES ============ -->
 <div id="tab-artisans" data-tab-content class="hidden">
 <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-8">
@@ -664,20 +645,41 @@ body[data-page="admin"]{ background:#fbf9f4; }
 </div>
 </div>
 
-<!-- ============ ORDER LOGISTICS MODAL ============ -->
+<!-- ============ ORDER DETAILS MODAL ============ -->
 <div id="logistics-modal" class="fixed inset-0 z-[100] hidden items-center justify-center p-4">
 <div class="modal-backdrop absolute inset-0 bg-on-surface/40 backdrop-blur-sm" onclick="closeLogisticsModal()"></div>
-<div class="modal-panel relative bg-surface w-full max-w-md max-h-[90vh] overflow-y-auto p-8">
+<div class="modal-panel relative bg-surface w-full max-w-lg max-h-[90vh] overflow-y-auto p-8">
 <div class="flex justify-between items-center mb-6">
-<h2 class="font-headline-md text-headline-md text-primary">Shipping Logistics</h2>
+<h2 class="font-headline-md text-headline-md text-primary">Order Details</h2>
 <button onclick="closeLogisticsModal()" class="text-on-surface-variant hover:text-primary transition-colors" aria-label="Close"><span class="material-symbols-outlined">close</span></button>
 </div>
 <p class="font-label-sm text-label-sm text-on-surface-variant mb-6">Order <span id="lg-order-number" class="text-primary font-medium"></span></p>
+
+<div class="mb-6">
+<p class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest mb-2">Customer &amp; Delivery Address</p>
+<div id="lg-customer-address" class="text-sm text-on-surface bg-surface-container-low rounded border border-outline-variant/20 p-4 leading-relaxed"></div>
+</div>
+
+<div class="mb-6">
+<p class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest mb-2">Items</p>
+<div id="lg-order-items" class="text-sm text-on-surface bg-surface-container-low rounded border border-outline-variant/20 p-4 flex flex-col gap-2"></div>
+</div>
+
 <div class="mb-6 p-4 bg-surface-container-low rounded border border-outline-variant/20">
+<p class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest mb-3">Shipping Label</p>
 <button type="button" id="lg-auto-create-btn" onclick="autoCreateDelhiveryLabel()" class="btn w-full py-3 bg-secondary text-on-secondary font-label-sm text-label-sm uppercase tracking-widest hover:brightness-110 flex items-center justify-center gap-2"><span class="material-symbols-outlined text-[18px]">bolt</span> Auto-Create Delhivery Label</button>
 <button type="button" id="lg-download-label-btn" onclick="downloadDelhiveryLabel()" class="hidden btn w-full py-3 mt-2 border border-secondary text-secondary font-label-sm text-label-sm uppercase tracking-widest hover:bg-secondary hover:text-on-secondary transition-colors flex items-center justify-center gap-2"><span class="material-symbols-outlined text-[18px]">download</span> Download Label PDF</button>
 <p id="lg-auto-create-status" class="hidden font-label-sm text-label-sm mt-2"></p>
 </div>
+
+<div class="mb-6 p-4 bg-surface-container-low rounded border border-outline-variant/20">
+<p class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest mb-3">Invoice</p>
+<div class="flex gap-3">
+<button type="button" onclick="downloadCurrentOrderInvoice()" class="flex-1 py-3 border border-primary text-primary font-label-sm text-label-sm uppercase tracking-widest hover:bg-primary hover:text-on-primary transition-colors flex items-center justify-center gap-2"><span class="material-symbols-outlined text-[18px]">receipt_long</span> Download</button>
+<button type="button" onclick="shareCurrentOrderInvoice()" class="flex-1 py-3 border border-primary text-primary font-label-sm text-label-sm uppercase tracking-widest hover:bg-primary hover:text-on-primary transition-colors flex items-center justify-center gap-2"><span class="material-symbols-outlined text-[18px]">share</span> Share</button>
+</div>
+</div>
+
 <form onsubmit="return false;" class="flex flex-col gap-6">
 <input type="hidden" id="lg-order-id"/>
 <div class="field filled"><input id="lg-transporter" placeholder=" "/><label>Transporter Name</label></div>
@@ -1246,33 +1248,14 @@ function customerOrderRowHTML(o){
     + '<td class="py-3 px-2 text-right">' + mistiData.formatINR(o.total) + '</td>'
     + '<td class="py-3 px-2 text-on-surface-variant whitespace-nowrap">' + dateStr + '</td>'
     + '<td class="py-3 px-2"><span class="' + (CUSTOMER_STATUS_BADGE[o.status]||'') + ' px-2 py-1 rounded text-xs font-bold uppercase inline-block" id="co-badge-' + o.id + '">' + o.status + '</span></td>'
-    + '<td class="py-3 px-2">' + logisticsLabel + '<br/><button onclick="openLogisticsModal(\'' + jsq(o.id) + '\',\'' + jsq(o.orderNumber) + '\',\'' + jsq(o.transporter) + '\',\'' + jsq(o.trackingId) + '\')" class="text-primary text-xs uppercase tracking-wide hover:underline mt-1">' + (o.transporter ? 'Edit' : 'Set') + '</button></td>'
-    + '<td class="py-3 px-2 text-right"><select onchange="updateCustomerOrderStatusUI(\'' + o.id + '\', this.value)" class="border border-outline-variant text-sm rounded px-2 py-1 bg-surface">' + options + '</select></td>'
+    + '<td class="py-3 px-2">' + logisticsLabel + '<br/><button onclick="openOrderDetailsModal(\'' + jsq(o.id) + '\')" class="text-primary text-xs uppercase tracking-wide hover:underline mt-1">' + (o.transporter ? 'Edit' : 'Set') + '</button></td>'
+    + '<td class="py-3 px-2 text-right"><select onchange="updateCustomerOrderStatusUI(\'' + o.id + '\', this.value)" class="border border-outline-variant text-sm rounded px-2 py-1 bg-surface mb-1">' + options + '</select><br/><button onclick="openOrderDetailsModal(\'' + jsq(o.id) + '\')" class="text-primary text-xs uppercase tracking-wide hover:underline">Details</button></td>'
     + '</tr>';
 }
 function renderCustomerOrdersTable(){
   const body = qs('#customer-orders-table-body');
   if(body) body.innerHTML = LIVE_CUSTOMER_ORDERS.map(customerOrderRowHTML).join('');
   const empty = qs('#customer-orders-empty');
-  if(empty) empty.classList.toggle('hidden', LIVE_CUSTOMER_ORDERS.length !== 0);
-}
-function invoiceRowHTML(o){
-  const dateStr = new Date(o.createdAt).toLocaleDateString('en-IN', {month:'short', day:'numeric', year:'numeric'});
-  const customerLine = (o.contact && o.contact.email) ? esc(o.contact.email) : ((o.address && o.address.name) ? esc(o.address.name) : 'Guest');
-  return '<tr class="border-b border-outline-variant/10 hover:bg-surface-container-low transition-colors">'
-    + '<td class="py-3 px-2 font-medium">' + o.orderNumber + '</td>'
-    + '<td class="py-3 px-2">' + customerLine + '</td>'
-    + '<td class="py-3 px-2 text-right">' + mistiData.formatINR(o.total) + '</td>'
-    + '<td class="py-3 px-2 text-on-surface-variant whitespace-nowrap">' + dateStr + '</td>'
-    + '<td class="py-3 px-2 text-right whitespace-nowrap">'
-    + '<button onclick="downloadAdminInvoice(\'' + jsq(o.id) + '\')" class="text-on-surface-variant text-xs uppercase tracking-wide hover:text-primary mr-3">Download</button>'
-    + '<button onclick="shareAdminInvoice(\'' + jsq(o.id) + '\')" class="text-on-surface-variant text-xs uppercase tracking-wide hover:text-primary">Share</button>'
-    + '</td></tr>';
-}
-function renderInvoicesTable(){
-  const body = qs('#invoices-table-body');
-  if(body) body.innerHTML = LIVE_CUSTOMER_ORDERS.map(invoiceRowHTML).join('');
-  const empty = qs('#invoices-empty');
   if(empty) empty.classList.toggle('hidden', LIVE_CUSTOMER_ORDERS.length !== 0);
 }
 function downloadAdminInvoice(id){
@@ -1302,6 +1285,10 @@ async function shareAdminInvoice(id){
   }
 }
 window.shareAdminInvoice = shareAdminInvoice;
+function downloadCurrentOrderInvoice(){ downloadAdminInvoice(qs('#lg-order-id').value); }
+function shareCurrentOrderInvoice(){ shareAdminInvoice(qs('#lg-order-id').value); }
+window.downloadCurrentOrderInvoice = downloadCurrentOrderInvoice;
+window.shareCurrentOrderInvoice = shareCurrentOrderInvoice;
 async function updateCustomerOrderStatusUI(id, status){
   const badge = qs('#co-badge-' + id);
   if(badge){
@@ -1389,7 +1376,6 @@ function handleCustomerOrdersUpdate(orders){
   NOTIF_SEEN_IDS = new Set(orders.map(function(o){ return o.id; }));
   LIVE_CUSTOMER_ORDERS = orders;
   renderCustomerOrdersTable();
-  renderInvoicesTable();
   renderNotifPanel();
   updateDashboardStats();
 }
@@ -1780,11 +1766,30 @@ function refreshLogisticsAutoCreateUI(){
   qs('#lg-download-label-btn').classList.toggle('hidden', !hasWaybill);
   qs('#lg-auto-create-status').classList.add('hidden');
 }
-function openLogisticsModal(orderId, orderNumber, transporter, trackingId){
-  qs('#lg-order-id').value = orderId;
-  qs('#lg-order-number').textContent = orderNumber;
-  qs('#lg-transporter').value = transporter || '';
-  qs('#lg-tracking-id').value = trackingId || '';
+function orderAddressHTML(o){
+  const addr = o.address || {};
+  const contact = o.contact || {};
+  const lines = [addr.name, addr.street, [addr.city, addr.state, addr.pin].filter(Boolean).join(', '), addr.country].filter(Boolean).map(esc);
+  const contactLine = [contact.phone, contact.email].filter(Boolean).map(esc).join(' &middot; ');
+  return (lines.length ? lines.join('<br/>') : '<span class="text-on-surface-variant">No address on file</span>')
+    + (contactLine ? ('<br/><span class="text-on-surface-variant">' + contactLine + '</span>') : '');
+}
+function orderItemsHTML(o){
+  const items = o.items || [];
+  if(!items.length) return '<span class="text-on-surface-variant">No items on file</span>';
+  return items.map(function(it){
+    return '<div class="flex justify-between gap-3"><span>' + it.qty + '&times; ' + esc(it.name) + (it.size ? (' (Size ' + esc(it.size) + ')') : '') + '</span><span class="text-on-surface-variant">' + mistiData.formatINR(it.price * it.qty) + '</span></div>';
+  }).join('');
+}
+function openOrderDetailsModal(orderId){
+  const o = LIVE_CUSTOMER_ORDERS.find(function(x){ return x.id === orderId; });
+  if(!o){ toast('Order not found', 'error'); return; }
+  qs('#lg-order-id').value = o.id;
+  qs('#lg-order-number').textContent = o.orderNumber;
+  qs('#lg-customer-address').innerHTML = orderAddressHTML(o);
+  qs('#lg-order-items').innerHTML = orderItemsHTML(o);
+  qs('#lg-transporter').value = o.transporter || '';
+  qs('#lg-tracking-id').value = o.trackingId || '';
   qs('#logistics-modal-error').classList.add('hidden');
   refreshLogisticsAutoCreateUI();
   const modal = qs('#logistics-modal');
@@ -1868,7 +1873,7 @@ async function downloadDelhiveryLabel(){
     btn.removeAttribute('disabled');
   }
 }
-window.openLogisticsModal = openLogisticsModal;
+window.openOrderDetailsModal = openOrderDetailsModal;
 window.closeLogisticsModal = closeLogisticsModal;
 window.saveLogistics = saveLogistics;
 window.autoCreateDelhiveryLabel = autoCreateDelhiveryLabel;
