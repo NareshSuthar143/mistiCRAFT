@@ -185,15 +185,11 @@ details.acc[open] .acc-chevron{ transform:rotate(180deg); }
 <!-- Left Column: Gallery -->
 <div class="lg:col-span-7 flex flex-col gap-6">
 <div class="relative aspect-[4/5] bg-surface-container-low overflow-hidden group">
-<img class="w-full h-full object-cover transition-opacity duration-300 cursor-zoom-in" style="transition-property:opacity;" alt="Mayur Embroidered Tee" id="main-image" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBT6vqvmgHyoChKo51K9hE-5z6gg9p5dh9GeC3QF_PghB0C2vz8z2ZhaUP0ZeMITwWIfXbs4J8yDGIBZ6GrF-iefyIuR75YtKvAht6o_Vidh4n1hmct-WSww_sw41bBhpIC2EyW_bKJL-KL819Yi-VMFAlnpaqOlzvxYe6GSkUh5LMvGgbD3F3aGDoGbyEk7v36ugh1_z6gL_yo11EknN8EvTBMnqAXWbGxH2q3ctEekg1qYgmkR2OK4TZDC2KH5DfykJ-E2hp4zypG" onclick="openLightbox()"/>
+<img class="w-full h-full object-cover transition-opacity duration-300 cursor-zoom-in" style="opacity:0" alt="" id="main-image" onclick="openLightbox()"/>
 <div class="absolute top-4 left-4 bg-primary text-on-primary px-3 py-1 font-label-sm uppercase tracking-widest">Limited Edition</div>
 <button type="button" onclick="openLightbox()" class="absolute bottom-4 right-4 bg-surface/80 backdrop-blur-sm p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-surface" aria-label="Zoom product photo"><span class="material-symbols-outlined text-primary">zoom_in</span></button>
 </div>
-<div id="gallery-thumbs" class="grid grid-cols-5 gap-4">
-<button class="thumb aspect-square bg-surface-container-high border-2 border-primary overflow-hidden" onclick="changeImage(this,0)" data-full="https://lh3.googleusercontent.com/aida-public/AB6AXuBT6vqvmgHyoChKo51K9hE-5z6gg9p5dh9GeC3QF_PghB0C2vz8z2ZhaUP0ZeMITwWIfXbs4J8yDGIBZ6GrF-iefyIuR75YtKvAht6o_Vidh4n1hmct-WSww_sw41bBhpIC2EyW_bKJL-KL819Yi-VMFAlnpaqOlzvxYe6GSkUh5LMvGgbD3F3aGDoGbyEk7v36ugh1_z6gL_yo11EknN8EvTBMnqAXWbGxH2q3ctEekg1qYgmkR2OK4TZDC2KH5DfykJ-E2hp4zypG" aria-label="View image 1">
-<img class="w-full h-full object-cover" alt="" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBT6vqvmgHyoChKo51K9hE-5z6gg9p5dh9GeC3QF_PghB0C2vz8z2ZhaUP0ZeMITwWIfXbs4J8yDGIBZ6GrF-iefyIuR75YtKvAht6o_Vidh4n1hmct-WSww_sw41bBhpIC2EyW_bKJL-KL819Yi-VMFAlnpaqOlzvxYe6GSkUh5LMvGgbD3F3aGDoGbyEk7v36ugh1_z6gL_yo11EknN8EvTBMnqAXWbGxH2q3ctEekg1qYgmkR2OK4TZDC2KH5DfykJ-E2hp4zypG"/>
-</button>
-</div>
+<div id="gallery-thumbs" class="grid grid-cols-5 gap-4"></div>
 </div>
 
 <!-- Right Column: Product Info -->
