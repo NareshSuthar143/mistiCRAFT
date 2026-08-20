@@ -569,6 +569,29 @@
     if (res.data && res.data.error) throw new Error(res.data.error);
     return res.data;
   }
+  /* Admin-only: save/remove this browser's Web Push subscription so the
+     notify-new-order Edge Function can push a real OS notification the
+     moment a new order lands — even with the admin dashboard tab closed.
+     RLS on push_subscriptions restricts writes to the signed-in admin's
+     own uid; only the Edge Function (service role) ever reads all rows. */
+  async function pushSubscribe(subscription) {
+    var user = currentUser();
+    if (!user) throw new Error('Not signed in.');
+    var sub = subscription.toJSON();
+    var client = db();
+    var res = await client.from('push_subscriptions').upsert({
+      uid: user.id,
+      endpoint: sub.endpoint,
+      p256dh: sub.keys.p256dh,
+      auth: sub.keys.auth
+    }, { onConflict: 'endpoint' });
+    if (res.error) throw res.error;
+  }
+  async function pushUnsubscribe(endpoint) {
+    var client = db();
+    var res = await client.from('push_subscriptions').delete().eq('endpoint', endpoint);
+    if (res.error) throw res.error;
+  }
   /* Customer-facing: look up an order with no login, by order number
      plus the phone or email used at checkout. */
   async function trackOrder(orderNumber, contact) {
@@ -715,6 +738,8 @@
     createDelhiveryShipment: createDelhiveryShipment,
     uploadImage: uploadImage,
     STAGE_LABELS: STAGE_LABELS,
-    trackOrder: trackOrder
+    trackOrder: trackOrder,
+    pushSubscribe: pushSubscribe,
+    pushUnsubscribe: pushUnsubscribe
   };
 })(window);

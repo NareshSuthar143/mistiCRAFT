@@ -539,3 +539,45 @@ drop trigger if exists delhivery_auto_create_on_order on customer_orders;
 create trigger delhivery_auto_create_on_order
 after insert on customer_orders
 for each row execute function trigger_delhivery_auto_create();
+
+-- ---------- New-order browser push notifications ----------
+-- One row per admin's browser subscription (Web Push endpoint + keys),
+-- saved via mistiData.pushSubscribe when they click "Enable
+-- Notifications" in Settings. RLS only lets an admin write their own
+-- rows; the notify-new-order Edge Function reads all of them under the
+-- service role to push a real OS notification on every new order, even
+-- with the dashboard tab closed. VAPID_PUBLIC_KEY / VAPID_PRIVATE_KEY /
+-- VAPID_SUBJECT are Edge Function secrets, never stored here.
+create table if not exists push_subscriptions (
+  id uuid primary key default gen_random_uuid(),
+  uid uuid not null references auth.users(id) on delete cascade,
+  endpoint text not null unique,
+  p256dh text not null,
+  auth text not null,
+  created_at timestamptz not null default now()
+);
+alter table push_subscriptions enable row level security;
+drop policy if exists "push subscriptions admin write own" on push_subscriptions;
+create policy "push subscriptions admin write own" on push_subscriptions
+for all using (uid = auth.uid() and is_admin()) with check (uid = auth.uid() and is_admin());
+
+create or replace function trigger_notify_new_order()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  perform net.http_post(
+    url := 'https://pdntxosjtacqgvzavtio.supabase.co/functions/v1/notify-new-order',
+    headers := '{"Content-Type":"application/json"}'::jsonb,
+    body := jsonb_build_object('order_id', new.id)
+  );
+  return new;
+end;
+$$;
+
+drop trigger if exists notify_new_order_on_insert on customer_orders;
+create trigger notify_new_order_on_insert
+after insert on customer_orders
+for each row execute function trigger_notify_new_order();
