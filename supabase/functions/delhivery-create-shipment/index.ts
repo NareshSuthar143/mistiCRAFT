@@ -68,7 +68,7 @@ Deno.serve(async (req: Request) => {
     const waybill = String(order.tracking_id || "").trim();
     if (!waybill) return json({ error: "This order has no tracking ID yet — create the shipment first." }, 400);
     const res = await fetch(
-      `https://track.delhivery.com/api/p/packing_slip/?wbns=${encodeURIComponent(waybill)}&pdf=true`,
+      `https://track.delhivery.com/api/p/packing_slip?wbns=${encodeURIComponent(waybill)}&pdf=true&pdf_size=4R`,
       { headers: { Authorization: `Token ${DELHIVERY_API_TOKEN}` } }
     );
     if (!res.ok) {
