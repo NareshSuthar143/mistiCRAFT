@@ -585,3 +585,30 @@ drop trigger if exists notify_new_order_on_insert on customer_orders;
 create trigger notify_new_order_on_insert
 after insert on customer_orders
 for each row execute function trigger_notify_new_order();
+
+-- ---------- Customer order confirmation email + PDF invoice ----------
+-- Customer-facing counterpart to the admin alert above — same trust
+-- model (service role, no caller JWT), same RESEND_API_KEY /
+-- RESEND_FROM secrets, but sent to order.contact.email instead of
+-- settings.store_email, with the tax invoice attached as a PDF
+-- generated server-side (see supabase/functions/notify-customer-order).
+create or replace function trigger_notify_customer_order()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  perform net.http_post(
+    url := 'https://pdntxosjtacqgvzavtio.supabase.co/functions/v1/notify-customer-order',
+    headers := '{"Content-Type":"application/json"}'::jsonb,
+    body := jsonb_build_object('order_id', new.id)
+  );
+  return new;
+end;
+$$;
+
+drop trigger if exists notify_customer_order_on_insert on customer_orders;
+create trigger notify_customer_order_on_insert
+after insert on customer_orders
+for each row execute function trigger_notify_customer_order();
