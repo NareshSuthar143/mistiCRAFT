@@ -612,3 +612,18 @@ drop trigger if exists notify_customer_order_on_insert on customer_orders;
 create trigger notify_customer_order_on_insert
 after insert on customer_orders
 for each row execute function trigger_notify_customer_order();
+
+-- ---------- Email asset hosting (brand logo) ----------
+-- notify-new-order / notify-customer-order embed the brand mark in
+-- their emails via <img src>. Gmail and most mail clients strip or
+-- block inline data: URI images in received mail (they can't be
+-- cached/scanned the way a normal image request can), so the logo
+-- has to be a real, independently-fetchable file rather than the
+-- base64 data URI .brand-logo uses on the storefront itself.
+insert into storage.buckets (id, name, public)
+values ('email-assets', 'email-assets', true)
+on conflict (id) do nothing;
+
+drop policy if exists "email assets public read" on storage.objects;
+create policy "email assets public read" on storage.objects
+for select using (bucket_id = 'email-assets');
