@@ -69,17 +69,19 @@ body{ -webkit-font-smoothing:antialiased; }
 .timeline-step.done .timeline-dot{ border-color:#775a19; background:#775a19; }
 .timeline-step.done .timeline-dot .material-symbols-outlined{ color:#fff; font-size:14px; }
 
-.road-track{ position:relative; height:10px; margin:3rem 4px 2.75rem; border-radius:999px; background:#3a352c; }
+.road-track{ position:relative; height:10px; margin:3rem 4px 3.75rem; border-radius:999px; background:#3a352c; }
 .road-track::before{ content:''; position:absolute; inset:0; border-radius:999px; background-image:repeating-linear-gradient(to right, rgba(251,249,244,.55) 0, rgba(251,249,244,.55) 10px, transparent 10px, transparent 20px); background-size:24px 100%; animation:roadDashes 1.4s linear infinite; }
 @keyframes roadDashes{ to{ background-position:-24px 0; } }
 .road-fill{ position:absolute; top:0; left:0; height:100%; border-radius:999px; background:#775a19; transition:width 1.1s var(--ease); }
-.road-truck{ position:absolute; top:50%; transform:translate(-50%,-50%); transition:left 1.1s var(--ease); animation:truckBob 1.6s ease-in-out infinite; }
+.road-truck{ position:absolute; top:50%; transform:translate(-50%,-50%); transition:left 1.1s var(--ease); animation:truckBob 1.6s ease-in-out infinite; z-index:2; }
 @keyframes truckBob{ 0%,100%{ transform:translate(-50%,-50%) translateY(0); } 50%{ transform:translate(-50%,-50%) translateY(-3px); } }
-.road-truck img{ display:block; width:52px; height:17px; filter:drop-shadow(0 5px 7px rgba(27,28,25,.4)); }
-.road-stop{ position:absolute; top:100%; margin-top:22px; width:max-content; text-align:center; }
+.road-truck img, .road-truck svg{ display:block; width:52px; height:17px; filter:drop-shadow(0 5px 7px rgba(27,28,25,.4)); }
+.road-marker{ position:absolute; top:50%; transform:translate(-50%,-78%); z-index:1; }
+.road-marker svg{ display:block; width:44px; height:33px; filter:drop-shadow(0 3px 4px rgba(27,28,25,.3)); }
+.road-stop{ position:absolute; top:100%; margin-top:22px; width:68px; text-align:center; }
 .road-stop .road-dot{ display:block; width:9px; height:9px; margin:0 auto 6px; border-radius:9999px; background:#d1c5b4; border:2px solid #fbf9f4; }
 .road-stop.done .road-dot{ background:#775a19; }
-.road-stop .road-label{ font-size:.66rem; letter-spacing:.05em; text-transform:uppercase; color:#8a8378; }
+.road-stop .road-label{ display:block; font-size:.62rem; line-height:1.25; letter-spacing:.03em; text-transform:uppercase; color:#8a8378; }
 .road-stop.done .road-label{ color:#4e4639; font-weight:600; }
 @media (prefers-reduced-motion: reduce){
   .road-track::before{ animation:none; }
@@ -309,7 +311,48 @@ function renderTimeline(events){
   }).join('');
 }
 
-const TRUCK_IMG = '<img src="https://pdntxosjtacqgvzavtio.supabase.co/storage/v1/object/public/site-assets/truck.png" alt="Delivery truck" width="52" height="17"/>';
+const TRUCK_IMG = '<img class="road-truck-img" src="https://pdntxosjtacqgvzavtio.supabase.co/storage/v1/object/public/site-assets/truck.png" alt="Delivery truck" width="52" height="17"/>';
+
+// Falls back to this original hand-drawn illustration (not traced from
+// any carrier's logo) if the hosted photo above ever fails to load, so
+// a network hiccup shows a truck rather than a broken-image icon.
+const TRUCK_FALLBACK_SVG = '<svg viewBox="0 0 100 50" xmlns="http://www.w3.org/2000/svg">'
+  + '<rect x="2" y="12" width="62" height="24" rx="3" fill="#14161a"/>'
+  + '<rect x="6" y="16" width="54" height="4" fill="#c9a24a"/>'
+  + '<path d="M64 18 h20 a6 6 0 0 1 6 6 v12 h-26 z" fill="#1c5fa8"/>'
+  + '<path d="M70 21 h11 a4 4 0 0 1 4 4 v3 h-15 z" fill="#cfe3f5"/>'
+  + '<rect x="64" y="30" width="26" height="6" fill="#0f1013"/>'
+  + '<circle cx="18" cy="40" r="6" fill="#111214"/><circle cx="18" cy="40" r="2.4" fill="#8a8378"/>'
+  + '<circle cx="48" cy="40" r="6" fill="#111214"/><circle cx="48" cy="40" r="2.4" fill="#8a8378"/>'
+  + '<circle cx="80" cy="40" r="6" fill="#111214"/><circle cx="80" cy="40" r="2.4" fill="#8a8378"/>'
+  + '</svg>';
+
+// Small original isometric warehouse building (not any real company's
+// building or logo): a shaded 3-face box reads as more dimensional than
+// a flat elevation. Recolored per checkpoint: warm brown for the
+// mistiCRAFT origin, cool teal for the carrier's facility.
+function warehouseSVG(wall, wallDark, roof, doorDark, doorLine, win){
+  return '<svg viewBox="0 0 56 42" xmlns="http://www.w3.org/2000/svg">'
+    + '<ellipse cx="27" cy="38.5" rx="23" ry="3" fill="rgba(27,28,25,.18)"/>'
+    // roof (top face, catches the most light)
+    + '<polygon points="6,14 34,14 48,6 20,6" fill="' + roof + '"/>'
+    // side face (in shadow, gives the box its depth)
+    + '<polygon points="34,34 48,26 48,6 34,14" fill="' + wallDark + '"/>'
+    // front face
+    + '<polygon points="6,34 34,34 34,14 6,14" fill="' + wall + '"/>'
+    // roll-up loading-dock door with shutter lines, on the front face
+    + '<polygon points="10,34 22,34 22,20 10,20" fill="' + doorDark + '"/>'
+    + '<rect x="10" y="23" width="12" height="1.3" fill="' + doorLine + '"/>'
+    + '<rect x="10" y="26.4" width="12" height="1.3" fill="' + doorLine + '"/>'
+    + '<rect x="10" y="29.8" width="12" height="1.3" fill="' + doorLine + '"/>'
+    // small office window, front face
+    + '<rect x="26" y="17" width="6" height="5" rx="0.6" fill="' + win + '"/>'
+    // roof vent for a touch of detail
+    + '<rect x="39" y="2.5" width="3" height="4.5" fill="' + wallDark + '"/>'
+    + '</svg>';
+}
+const WAREHOUSE_ORIGIN_SVG = warehouseSVG('#c39a56', '#8a6229', '#e0bb75', '#3a2c12', '#cbb37a', '#e9dcc2');
+const WAREHOUSE_HUB_SVG = warehouseSVG('#7fadb3', '#3d6b71', '#a3cdd1', '#1c3a3e', '#bcdadd', '#eef7f8');
 
 const ROAD_STAGES = ['placed', 'processing', 'shipped', 'out_for_delivery', 'delivered'];
 function renderRoad(stageKey){
@@ -332,11 +375,22 @@ function renderRoad(stageKey){
       + '<span class="road-label">' + trackEsc((mistiData.STAGE_LABELS && mistiData.STAGE_LABELS[key]) || key) + '</span>'
       + '</div>';
   }).join('');
+  const shippedPercent = (ROAD_STAGES.indexOf('shipped') / lastIdx) * 100;
+  const originMarker = '<div class="road-marker" style="left:0%" title="mistiCRAFT Warehouse">' + WAREHOUSE_ORIGIN_SVG + '</div>';
+  const hubMarker = '<div class="road-marker" style="left:' + shippedPercent + '%" title="Delhivery Facility">' + WAREHOUSE_HUB_SVG + '</div>';
   wrap.innerHTML = '<div class="road-track">'
     + '<div class="road-fill" style="width:' + percent + '%"></div>'
     + stops
+    + originMarker
+    + hubMarker
     + '<div class="road-truck" style="left:' + percent + '%">' + TRUCK_IMG + '</div>'
     + '</div>';
+  const truckImg = wrap.querySelector('.road-truck-img');
+  if(truckImg){
+    truckImg.addEventListener('error', function(){
+      this.outerHTML = TRUCK_FALLBACK_SVG;
+    }, { once: true });
+  }
 }
 
 function trackItemHTML(item){
