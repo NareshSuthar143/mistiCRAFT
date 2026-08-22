@@ -69,6 +69,23 @@ body{ -webkit-font-smoothing:antialiased; }
 .timeline-step.done .timeline-dot{ border-color:#775a19; background:#775a19; }
 .timeline-step.done .timeline-dot .material-symbols-outlined{ color:#fff; font-size:14px; }
 
+.road-track{ position:relative; height:10px; margin:3rem 4px 2.75rem; border-radius:999px; background:#3a352c; }
+.road-track::before{ content:''; position:absolute; inset:0; border-radius:999px; background-image:repeating-linear-gradient(to right, rgba(251,249,244,.55) 0, rgba(251,249,244,.55) 10px, transparent 10px, transparent 20px); background-size:24px 100%; animation:roadDashes 1.4s linear infinite; }
+@keyframes roadDashes{ to{ background-position:-24px 0; } }
+.road-fill{ position:absolute; top:0; left:0; height:100%; border-radius:999px; background:#775a19; transition:width 1.1s var(--ease); }
+.road-truck{ position:absolute; top:50%; transform:translate(-50%,-50%); transition:left 1.1s var(--ease); animation:truckBob 1.6s ease-in-out infinite; }
+@keyframes truckBob{ 0%,100%{ transform:translate(-50%,-50%) translateY(0); } 50%{ transform:translate(-50%,-50%) translateY(-3px); } }
+.road-truck img{ display:block; width:52px; height:17px; filter:drop-shadow(0 5px 7px rgba(27,28,25,.4)); }
+.road-stop{ position:absolute; top:100%; margin-top:22px; width:max-content; text-align:center; }
+.road-stop .road-dot{ display:block; width:9px; height:9px; margin:0 auto 6px; border-radius:9999px; background:#d1c5b4; border:2px solid #fbf9f4; }
+.road-stop.done .road-dot{ background:#775a19; }
+.road-stop .road-label{ font-size:.66rem; letter-spacing:.05em; text-transform:uppercase; color:#8a8378; }
+.road-stop.done .road-label{ color:#4e4639; font-weight:600; }
+@media (prefers-reduced-motion: reduce){
+  .road-track::before{ animation:none; }
+  .road-truck{ animation:none; }
+}
+
 </style>
 </head>
 
@@ -157,6 +174,8 @@ body{ -webkit-font-smoothing:antialiased; }
 </div>
 <a id="res-delhivery-link" href="#" target="_blank" rel="noopener" class="hidden shrink-0 font-label-sm text-label-sm text-primary underline underline-offset-2 whitespace-nowrap">Track on Delhivery</a>
 </div>
+
+<div id="res-road" class="mb-16" aria-hidden="true"></div>
 
 <h3 class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest mb-6">Delivery Timeline</h3>
 <div id="res-timeline" class="mb-10"></div>
@@ -266,15 +285,58 @@ function trackEsc(s){ return String(s==null ? '' : s).replace(/</g,'&lt;'); }
 function renderTimeline(events){
   const wrap = qs('#res-timeline');
   if(!events || !events.length){ wrap.innerHTML = '<p class="font-body-md text-body-md text-on-surface-variant">No updates yet.</p>'; return; }
-  wrap.innerHTML = events.map(function(e, i){
-    const isLast = i === events.length - 1;
+  // events arrive oldest-first from the DB; show newest at the top,
+  // with that most-recent scan marked as the current position.
+  const ordered = events.slice().reverse();
+  wrap.innerHTML = ordered.map(function(e, i){
+    const isLast = i === 0;
     const dateStr = new Date(e.createdAt).toLocaleString('en-IN', {month:'short', day:'numeric', hour:'numeric', minute:'2-digit'});
+    // e.label is the coarse stage ("Shipped") — while a shipment is in
+    // transit, every scan shares that same stage, so using it as the
+    // heading makes many rows in a row look identical. e.note carries
+    // the actual per-scan detail from Delhivery ("Vehicle Departed —
+    // Udaipur_Balicha_H (Rajasthan)") — split it so the specific scan
+    // becomes the heading and the stage moves into the sub-line instead.
+    const noteParts = (e.note || '').split(' — ');
+    const heading = noteParts[0] || e.label;
+    const location = noteParts.length > 1 ? noteParts[1] : '';
+    const subLine = [trackEsc(e.label), dateStr, trackEsc(location)].filter(Boolean).join(' &middot; ');
     return '<div class="timeline-step done">'
       + '<span class="timeline-dot"><span class="material-symbols-outlined">' + (isLast ? 'radio_button_checked' : 'check') + '</span></span>'
-      + '<p class="font-label-md text-label-md text-on-surface">' + trackEsc(e.label) + '</p>'
-      + '<p class="font-label-sm text-label-sm text-on-surface-variant">' + dateStr + (e.note ? (' &middot; ' + trackEsc(e.note)) : '') + '</p>'
+      + '<p class="font-label-md text-label-md text-on-surface">' + trackEsc(heading) + '</p>'
+      + '<p class="font-label-sm text-label-sm text-on-surface-variant">' + subLine + '</p>'
       + '</div>';
   }).join('');
+}
+
+const TRUCK_IMG = '<img src="https://pdntxosjtacqgvzavtio.supabase.co/storage/v1/object/public/site-assets/truck.png" alt="Delivery truck" width="52" height="17"/>';
+
+const ROAD_STAGES = ['placed', 'processing', 'shipped', 'out_for_delivery', 'delivered'];
+function renderRoad(stageKey){
+  const wrap = qs('#res-road');
+  if(!wrap) return;
+  if(stageKey === 'cancelled'){
+    wrap.innerHTML = '<p class="text-center font-label-sm text-label-sm text-error uppercase tracking-widest">Order Cancelled</p>';
+    return;
+  }
+  let idx = ROAD_STAGES.indexOf(stageKey);
+  if(idx < 0) idx = 0;
+  const lastIdx = ROAD_STAGES.length - 1;
+  const percent = (idx / lastIdx) * 100;
+  const stops = ROAD_STAGES.map(function(key, i){
+    const done = i <= idx;
+    const pos = (i / lastIdx) * 100;
+    const align = i === 0 ? 'translateX(0)' : (i === lastIdx ? 'translateX(-100%)' : 'translateX(-50%)');
+    return '<div class="road-stop' + (done ? ' done' : '') + '" style="left:' + pos + '%;transform:' + align + '">'
+      + '<span class="road-dot"></span>'
+      + '<span class="road-label">' + trackEsc((mistiData.STAGE_LABELS && mistiData.STAGE_LABELS[key]) || key) + '</span>'
+      + '</div>';
+  }).join('');
+  wrap.innerHTML = '<div class="road-track">'
+    + '<div class="road-fill" style="width:' + percent + '%"></div>'
+    + stops
+    + '<div class="road-truck" style="left:' + percent + '%">' + TRUCK_IMG + '</div>'
+    + '</div>';
 }
 
 function trackItemHTML(item){
@@ -308,6 +370,10 @@ function renderTrackResult(order){
     logistics.classList.add('hidden');
     delhiveryLink.classList.add('hidden');
   }
+  let currentStage = 'placed';
+  if(order.status === 'Cancelled') currentStage = 'cancelled';
+  else if(order.events && order.events.length) currentStage = order.events[order.events.length - 1].stage;
+  renderRoad(currentStage);
   renderTimeline(order.events);
   qs('#res-items').innerHTML = order.items.map(trackItemHTML).join('');
   qs('#track-result').classList.remove('hidden');

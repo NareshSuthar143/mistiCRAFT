@@ -490,6 +490,28 @@ for update using (
 );
 
 
+-- ---------- Site UI assets (e.g. tracking-page truck illustration) ----------
+-- Public bucket for small images referenced directly by src="..." in the
+-- site's static HTML/JS, as opposed to admin-managed content like
+-- product/artisan photos. Admin-only write since these are developer-
+-- uploaded assets, not something store owners manage day to day.
+insert into storage.buckets (id, name, public)
+values ('site-assets', 'site-assets', true)
+on conflict (id) do nothing;
+
+drop policy if exists "site assets public read" on storage.objects;
+create policy "site assets public read" on storage.objects
+for select using (bucket_id = 'site-assets');
+
+drop policy if exists "site assets admin write" on storage.objects;
+create policy "site assets admin write" on storage.objects
+for insert with check (bucket_id = 'site-assets' and is_admin());
+
+drop policy if exists "site assets admin update" on storage.objects;
+create policy "site assets admin update" on storage.objects
+for update using (bucket_id = 'site-assets' and is_admin());
+
+
 -- ---------- Delhivery auto-generated shipping labels ----------
 -- Optional per-product weight, used when auto-creating a Delhivery
 -- shipment; falls back to settings.default_package_weight_grams per
