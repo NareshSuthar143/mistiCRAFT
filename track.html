@@ -266,8 +266,11 @@ function trackEsc(s){ return String(s==null ? '' : s).replace(/</g,'&lt;'); }
 function renderTimeline(events){
   const wrap = qs('#res-timeline');
   if(!events || !events.length){ wrap.innerHTML = '<p class="font-body-md text-body-md text-on-surface-variant">No updates yet.</p>'; return; }
-  wrap.innerHTML = events.map(function(e, i){
-    const isLast = i === events.length - 1;
+  // events arrive oldest-first from the DB; show newest at the top,
+  // with that most-recent scan marked as the current position.
+  const ordered = events.slice().reverse();
+  wrap.innerHTML = ordered.map(function(e, i){
+    const isLast = i === 0;
     const dateStr = new Date(e.createdAt).toLocaleString('en-IN', {month:'short', day:'numeric', hour:'numeric', minute:'2-digit'});
     // e.label is the coarse stage ("Shipped") — while a shipment is in
     // transit, every scan shares that same stage, so using it as the
