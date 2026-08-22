@@ -269,10 +269,20 @@ function renderTimeline(events){
   wrap.innerHTML = events.map(function(e, i){
     const isLast = i === events.length - 1;
     const dateStr = new Date(e.createdAt).toLocaleString('en-IN', {month:'short', day:'numeric', hour:'numeric', minute:'2-digit'});
+    // e.label is the coarse stage ("Shipped") — while a shipment is in
+    // transit, every scan shares that same stage, so using it as the
+    // heading makes many rows in a row look identical. e.note carries
+    // the actual per-scan detail from Delhivery ("Vehicle Departed —
+    // Udaipur_Balicha_H (Rajasthan)") — split it so the specific scan
+    // becomes the heading and the stage moves into the sub-line instead.
+    const noteParts = (e.note || '').split(' — ');
+    const heading = noteParts[0] || e.label;
+    const location = noteParts.length > 1 ? noteParts[1] : '';
+    const subLine = [trackEsc(e.label), dateStr, trackEsc(location)].filter(Boolean).join(' &middot; ');
     return '<div class="timeline-step done">'
       + '<span class="timeline-dot"><span class="material-symbols-outlined">' + (isLast ? 'radio_button_checked' : 'check') + '</span></span>'
-      + '<p class="font-label-md text-label-md text-on-surface">' + trackEsc(e.label) + '</p>'
-      + '<p class="font-label-sm text-label-sm text-on-surface-variant">' + dateStr + (e.note ? (' &middot; ' + trackEsc(e.note)) : '') + '</p>'
+      + '<p class="font-label-md text-label-md text-on-surface">' + trackEsc(heading) + '</p>'
+      + '<p class="font-label-sm text-label-sm text-on-surface-variant">' + subLine + '</p>'
       + '</div>';
   }).join('');
 }
