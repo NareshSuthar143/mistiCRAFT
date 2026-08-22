@@ -362,6 +362,13 @@ function renderRoad(stageKey){
     wrap.innerHTML = '<p class="text-center font-label-sm text-label-sm text-error uppercase tracking-widest">Order Cancelled</p>';
     return;
   }
+  if(stageKey === 'delivered'){
+    wrap.innerHTML = '<div class="text-center">'
+      + '<span class="material-symbols-outlined filled" style="font-size:2.5rem;color:#775a19;">check_circle</span>'
+      + '<p class="font-label-md text-label-md text-on-surface uppercase tracking-widest mt-2">Order Delivered</p>'
+      + '</div>';
+    return;
+  }
   let idx = ROAD_STAGES.indexOf(stageKey);
   if(idx < 0) idx = 0;
   const lastIdx = ROAD_STAGES.length - 1;
