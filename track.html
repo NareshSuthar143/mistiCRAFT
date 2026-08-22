@@ -75,7 +75,7 @@ body{ -webkit-font-smoothing:antialiased; }
 .road-fill{ position:absolute; top:0; left:0; height:100%; border-radius:999px; background:#775a19; transition:width 1.1s var(--ease); }
 .road-truck{ position:absolute; top:50%; transform:translate(-50%,-50%); transition:left 1.1s var(--ease); animation:truckBob 1.6s ease-in-out infinite; z-index:2; }
 @keyframes truckBob{ 0%,100%{ transform:translate(-50%,-50%) translateY(0); } 50%{ transform:translate(-50%,-50%) translateY(-3px); } }
-.road-truck img{ display:block; width:52px; height:17px; filter:drop-shadow(0 5px 7px rgba(27,28,25,.4)); }
+.road-truck img, .road-truck svg{ display:block; width:52px; height:17px; filter:drop-shadow(0 5px 7px rgba(27,28,25,.4)); }
 .road-marker{ position:absolute; top:50%; transform:translate(-50%,-78%); z-index:1; }
 .road-marker svg{ display:block; width:44px; height:33px; filter:drop-shadow(0 3px 4px rgba(27,28,25,.3)); }
 .road-stop{ position:absolute; top:100%; margin-top:22px; width:68px; text-align:center; }
@@ -311,7 +311,21 @@ function renderTimeline(events){
   }).join('');
 }
 
-const TRUCK_IMG = '<img src="https://pdntxosjtacqgvzavtio.supabase.co/storage/v1/object/public/site-assets/truck.png" alt="Delivery truck" width="52" height="17"/>';
+const TRUCK_IMG = '<img class="road-truck-img" src="https://pdntxosjtacqgvzavtio.supabase.co/storage/v1/object/public/site-assets/truck.png" alt="Delivery truck" width="52" height="17"/>';
+
+// Falls back to this original hand-drawn illustration (not traced from
+// any carrier's logo) if the hosted photo above ever fails to load, so
+// a network hiccup shows a truck rather than a broken-image icon.
+const TRUCK_FALLBACK_SVG = '<svg viewBox="0 0 100 50" xmlns="http://www.w3.org/2000/svg">'
+  + '<rect x="2" y="12" width="62" height="24" rx="3" fill="#14161a"/>'
+  + '<rect x="6" y="16" width="54" height="4" fill="#c9a24a"/>'
+  + '<path d="M64 18 h20 a6 6 0 0 1 6 6 v12 h-26 z" fill="#1c5fa8"/>'
+  + '<path d="M70 21 h11 a4 4 0 0 1 4 4 v3 h-15 z" fill="#cfe3f5"/>'
+  + '<rect x="64" y="30" width="26" height="6" fill="#0f1013"/>'
+  + '<circle cx="18" cy="40" r="6" fill="#111214"/><circle cx="18" cy="40" r="2.4" fill="#8a8378"/>'
+  + '<circle cx="48" cy="40" r="6" fill="#111214"/><circle cx="48" cy="40" r="2.4" fill="#8a8378"/>'
+  + '<circle cx="80" cy="40" r="6" fill="#111214"/><circle cx="80" cy="40" r="2.4" fill="#8a8378"/>'
+  + '</svg>';
 
 // Small original isometric warehouse building (not any real company's
 // building or logo): a shaded 3-face box reads as more dimensional than
@@ -371,6 +385,12 @@ function renderRoad(stageKey){
     + hubMarker
     + '<div class="road-truck" style="left:' + percent + '%">' + TRUCK_IMG + '</div>'
     + '</div>';
+  const truckImg = wrap.querySelector('.road-truck-img');
+  if(truckImg){
+    truckImg.addEventListener('error', function(){
+      this.outerHTML = TRUCK_FALLBACK_SVG;
+    }, { once: true });
+  }
 }
 
 function trackItemHTML(item){
