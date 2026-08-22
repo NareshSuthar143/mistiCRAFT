@@ -69,7 +69,7 @@ body{ -webkit-font-smoothing:antialiased; }
 .timeline-step.done .timeline-dot{ border-color:#775a19; background:#775a19; }
 .timeline-step.done .timeline-dot .material-symbols-outlined{ color:#fff; font-size:14px; }
 
-.road-track{ position:relative; height:10px; margin:3rem 4px 4.75rem; border-radius:999px; background:#3a352c; }
+.road-track{ position:relative; height:10px; margin:3rem 4px 3.75rem; border-radius:999px; background:#3a352c; }
 .road-track::before{ content:''; position:absolute; inset:0; border-radius:999px; background-image:repeating-linear-gradient(to right, rgba(251,249,244,.55) 0, rgba(251,249,244,.55) 10px, transparent 10px, transparent 20px); background-size:24px 100%; animation:roadDashes 1.4s linear infinite; }
 @keyframes roadDashes{ to{ background-position:-24px 0; } }
 .road-fill{ position:absolute; top:0; left:0; height:100%; border-radius:999px; background:#775a19; transition:width 1.1s var(--ease); }
@@ -80,11 +80,10 @@ body{ -webkit-font-smoothing:antialiased; }
 .road-marker .material-symbols-outlined{ font-size:14px; color:#fff; white-space:nowrap; }
 .road-marker-origin{ background:#775a19; }
 .road-marker-hub{ background:#3a6b73; }
-.road-stop{ position:absolute; top:100%; margin-top:22px; width:max-content; text-align:center; }
-.road-stop.road-stop-stagger{ margin-top:40px; }
+.road-stop{ position:absolute; top:100%; margin-top:22px; width:68px; text-align:center; }
 .road-stop .road-dot{ display:block; width:9px; height:9px; margin:0 auto 6px; border-radius:9999px; background:#d1c5b4; border:2px solid #fbf9f4; }
 .road-stop.done .road-dot{ background:#775a19; }
-.road-stop .road-label{ font-size:.66rem; letter-spacing:.05em; text-transform:uppercase; color:#8a8378; }
+.road-stop .road-label{ display:block; font-size:.62rem; line-height:1.25; letter-spacing:.03em; text-transform:uppercase; color:#8a8378; }
 .road-stop.done .road-label{ color:#4e4639; font-weight:600; }
 @media (prefers-reduced-motion: reduce){
   .road-track::before{ animation:none; }
@@ -332,8 +331,7 @@ function renderRoad(stageKey){
     const done = i <= idx;
     const pos = (i / lastIdx) * 100;
     const align = i === 0 ? 'translateX(0)' : (i === lastIdx ? 'translateX(-100%)' : 'translateX(-50%)');
-    const stagger = i % 2 === 1 ? ' road-stop-stagger' : '';
-    return '<div class="road-stop' + (done ? ' done' : '') + stagger + '" style="left:' + pos + '%;transform:' + align + '">'
+    return '<div class="road-stop' + (done ? ' done' : '') + '" style="left:' + pos + '%;transform:' + align + '">'
       + '<span class="road-dot"></span>'
       + '<span class="road-label">' + trackEsc((mistiData.STAGE_LABELS && mistiData.STAGE_LABELS[key]) || key) + '</span>'
       + '</div>';
