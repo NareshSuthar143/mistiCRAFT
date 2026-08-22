@@ -649,3 +649,32 @@ on conflict (id) do nothing;
 drop policy if exists "email assets public read" on storage.objects;
 create policy "email assets public read" on storage.objects
 for select using (bucket_id = 'email-assets');
+
+-- ---------- Product categories (admin-manageable) ----------
+-- Was a hardcoded label map in misticraft-data.js; moved to a real
+-- table so admins can add new categories from the dashboard instead
+-- of needing a code change. Seeded once with the categories already
+-- in use by existing products, so nothing already tagged with one of
+-- these breaks.
+create table if not exists categories (
+  id text primary key,
+  label text not null,
+  sort_order integer not null default 0
+);
+alter table categories enable row level security;
+
+drop policy if exists "categories public read" on categories;
+create policy "categories public read" on categories for select using (true);
+drop policy if exists "categories admin write" on categories;
+create policy "categories admin write" on categories for all using (is_admin()) with check (is_admin());
+
+insert into categories (id, label, sort_order) values
+  ('custom-tshirts', 'Custom T-Shirts', 0),
+  ('shirts', 'Shirts', 1),
+  ('denim-jackets', 'Denim Jackets', 2),
+  ('bottoms', 'Bottoms', 3),
+  ('handbags', 'Handbags', 4),
+  ('accessories', 'Accessories', 5)
+on conflict (id) do nothing;
+
+alter publication supabase_realtime add table categories;

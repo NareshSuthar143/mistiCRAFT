@@ -12,11 +12,13 @@
    Requires supabase-init.js to run first (see that file).
    ============================================================ */
 (function (root) {
-  var KEYS = { products: 'products', artisans: 'artisans', orders: 'orders', founders: 'founders' };
+  var KEYS = { products: 'products', artisans: 'artisans', orders: 'orders', founders: 'founders', categories: 'categories' };
 
   var DEFAULT_PRODUCTS = [];
 
   var DEFAULT_ARTISANS = [];
+
+  var DEFAULT_CATEGORIES = [];
 
   var DEFAULT_FOUNDERS = [
     {id:"founder-ceo",name:"Add Your Name",role:"Founder & CEO",quote:"Replace this with your own story — why you started mistiCRAFT and what you want it to stand for.",img:"https://placehold.co/400x400/2a2620/e8c165?text=Founder+%26+CEO"},
@@ -708,6 +710,7 @@
     DEFAULT_ARTISANS: DEFAULT_ARTISANS,
     DEFAULT_ORDERS: DEFAULT_ORDERS,
     DEFAULT_FOUNDERS: DEFAULT_FOUNDERS,
+    DEFAULT_CATEGORIES: DEFAULT_CATEGORIES,
     CATEGORY_LABELS: CATEGORY_LABELS,
     TECHNIQUE_LABELS: TECHNIQUE_LABELS,
     loadData: loadData,
