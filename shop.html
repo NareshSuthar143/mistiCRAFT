@@ -233,14 +233,7 @@ details.acc[open] .acc-chevron{ transform:rotate(180deg); }
 </div>
 <div class="mb-8">
 <h3 class="font-label-md text-label-md text-on-surface-variant uppercase tracking-widest mb-4">Category</h3>
-<div class="space-y-3" id="filter-categories">
-<label class="flex items-center gap-3 cursor-pointer group"><input value="custom-tshirts" class="w-5 h-5 border-outline rounded-none text-primary focus:ring-primary" type="checkbox"/><span class="font-body-md text-body-md group-hover:text-primary transition-colors">Custom T-Shirts</span></label>
-<label class="flex items-center gap-3 cursor-pointer group"><input value="shirts" class="w-5 h-5 border-outline rounded-none text-primary focus:ring-primary" type="checkbox"/><span class="font-body-md text-body-md group-hover:text-primary transition-colors">Shirts</span></label>
-<label class="flex items-center gap-3 cursor-pointer group"><input value="denim-jackets" class="w-5 h-5 border-outline rounded-none text-primary focus:ring-primary" type="checkbox"/><span class="font-body-md text-body-md group-hover:text-primary transition-colors">Denim Jackets</span></label>
-<label class="flex items-center gap-3 cursor-pointer group"><input value="bottoms" class="w-5 h-5 border-outline rounded-none text-primary focus:ring-primary" type="checkbox"/><span class="font-body-md text-body-md group-hover:text-primary transition-colors">Bottoms</span></label>
-<label class="flex items-center gap-3 cursor-pointer group"><input value="handbags" class="w-5 h-5 border-outline rounded-none text-primary focus:ring-primary" type="checkbox"/><span class="font-body-md text-body-md group-hover:text-primary transition-colors">Handbags</span></label>
-<label class="flex items-center gap-3 cursor-pointer group"><input value="accessories" class="w-5 h-5 border-outline rounded-none text-primary focus:ring-primary" type="checkbox"/><span class="font-body-md text-body-md group-hover:text-primary transition-colors">Accessories</span></label>
-</div>
+<div class="space-y-3" id="filter-categories"></div>
 </div>
 <div class="mb-8">
 <h3 class="font-label-md text-label-md text-on-surface-variant uppercase tracking-widest mb-4">Technique</h3>
@@ -467,6 +460,23 @@ if(reducedMotion){
 
 /* ---------- Product grid (loads from shared workshop data) ---------- */
 let LIVE_PRODUCTS = [];
+let LIVE_CATEGORIES = [];
+
+function renderCategoryFilters(){
+  const wrap = qs('#filter-categories');
+  if(!wrap) return;
+  const checked = qsa('#filter-categories input:checked').map(i=> i.value);
+  wrap.innerHTML = LIVE_CATEGORIES.map(function(c){
+    const esc = (s)=> String(s).replace(/"/g,'&quot;');
+    return '<label class="flex items-center gap-3 cursor-pointer group"><input value="' + esc(c.id) + '"'
+      + (checked.includes(c.id) ? ' checked' : '')
+      + ' class="w-5 h-5 border-outline rounded-none text-primary focus:ring-primary" type="checkbox"/><span class="font-body-md text-body-md group-hover:text-primary transition-colors">' + esc(c.label) + '</span></label>';
+  }).join('');
+}
+mistiData.subscribe(mistiData.KEYS.categories, function(categories){
+  LIVE_CATEGORIES = categories.slice().sort(function(a, b){ return (a.sort_order || 0) - (b.sort_order || 0); });
+  renderCategoryFilters();
+});
 
 function productCardHTML(p, index){
   const esc = (s)=> String(s).replace(/"/g,'&quot;');
@@ -564,7 +574,8 @@ function currentFilters(){
 function renderChips(cats, techs){
   const region = qs('#active-chips');
   region.innerHTML = '';
-  const labelMap = {'custom-tshirts':'Custom T-Shirts','shirts':'Shirts','denim-jackets':'Denim Jackets','handbags':'Handbags','accessories':'Accessories','bottoms':'Bottoms','embroidery':'Embroidery','patch-work':'Patch Work','beadwork':'Beadwork','hand-painted':'Hand-Painted','block-print':'Block Print'};
+  const labelMap = Object.assign({}, mistiData.TECHNIQUE_LABELS);
+  LIVE_CATEGORIES.forEach(function(c){ labelMap[c.id] = c.label; });
   [...cats, ...techs].forEach(v=>{
     const chip = document.createElement('span');
     chip.className = 'px-3 py-1 bg-surface-container-high rounded-full text-label-sm text-on-surface-variant flex items-center gap-1 border border-outline-variant/20';

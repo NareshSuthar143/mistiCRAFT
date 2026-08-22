@@ -336,6 +336,15 @@ body[data-page="admin"]{ background:#fbf9f4; }
 </div>
 <button onclick="openProductModal()" class="btn bg-primary text-white px-6 py-3 font-label-md text-label-md uppercase tracking-widest hover:brightness-110 flex items-center justify-center gap-2 w-fit"><span class="material-symbols-outlined text-[20px]">add</span> Add Product</button>
 </div>
+<div class="bg-surface rounded-lg border border-outline-variant/30 p-6 mb-6">
+<h2 class="font-label-md text-label-md text-on-surface-variant uppercase tracking-widest mb-4">Categories</h2>
+<form class="flex flex-col sm:flex-row gap-3 mb-4" onsubmit="event.preventDefault(); addCategory();">
+<div class="field filled flex-1"><input id="cat-new-label" placeholder=" "/><label>New category name</label></div>
+<button type="submit" class="btn bg-primary text-white px-6 py-3 font-label-md text-label-md uppercase tracking-widest hover:brightness-110 w-fit">Add</button>
+</form>
+<div id="categories-list" class="flex flex-wrap gap-2"></div>
+<p id="categories-empty" class="hidden font-body-md text-body-md text-on-surface-variant">No categories yet — add one above.</p>
+</div>
 <div class="bg-surface rounded-lg border border-outline-variant/30 p-6">
 <div class="overflow-x-auto -mx-2">
 <table class="w-full text-left border-collapse min-w-[760px]">
@@ -514,14 +523,7 @@ body[data-page="admin"]{ background:#fbf9f4; }
 <div class="field filled"><input id="pf-tagline" placeholder=" "/><label>Tagline (e.g. Hand-Embroidery | Organic Cotton)</label></div>
 <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
 <div class="field filled">
-<select id="pf-category">
-<option value="custom-tshirts">Custom T-Shirts</option>
-<option value="shirts">Shirts</option>
-<option value="denim-jackets">Denim Jackets</option>
-<option value="bottoms">Bottoms</option>
-<option value="handbags">Handbags</option>
-<option value="accessories">Accessories</option>
-</select>
+<select id="pf-category"></select>
 <label>Category</label>
 </div>
 <div class="field filled">
@@ -944,6 +946,7 @@ if('IntersectionObserver' in window){
 let LIVE_PRODUCTS = [];
 let LIVE_ORDERS = [];
 let LIVE_ARTISANS = [];
+let LIVE_CATEGORIES = [];
 
 const ORDER_STATUSES = ['Pending','Processing','Shipped','Delivered','On Hold'];
 const STATUS_BADGE = {
@@ -1013,6 +1016,62 @@ function renderProductsTable(){
   body.innerHTML = LIVE_PRODUCTS.map(productRowHTML).join('');
   qs('#products-empty').classList.toggle('hidden', LIVE_PRODUCTS.length !== 0);
 }
+
+/* ---------- Categories (Product form dropdown + shop filters) ---------- */
+function slugifyCategory(label){
+  return String(label || '').trim().toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+function renderCategoryOptions(){
+  const select = qs('#pf-category');
+  if(!select) return;
+  const prev = select.value;
+  select.innerHTML = LIVE_CATEGORIES.map(function(c){
+    return '<option value="' + esc(c.id) + '">' + esc(c.label) + '</option>';
+  }).join('');
+  if(LIVE_CATEGORIES.some(function(c){ return c.id === prev; })) select.value = prev;
+}
+
+function renderCategoriesManager(){
+  const list = qs('#categories-list');
+  if(!list) return;
+  list.innerHTML = LIVE_CATEGORIES.map(function(c){
+    return '<span class="px-3 py-1.5 bg-surface-container-high rounded-full text-label-sm text-on-surface-variant flex items-center gap-1.5 border border-outline-variant/20">'
+      + esc(c.label)
+      + '<button type="button" onclick="deleteCategory(\'' + c.id + '\')" class="hover:text-error transition-colors" aria-label="Delete ' + esc(c.label) + '"><span class="material-symbols-outlined text-[16px] block">close</span></button>'
+      + '</span>';
+  }).join('');
+  qs('#categories-empty').classList.toggle('hidden', LIVE_CATEGORIES.length !== 0);
+  renderCategoryOptions();
+}
+
+async function addCategory(){
+  const input = qs('#cat-new-label');
+  const label = input.value.trim();
+  if(!label) return;
+  const id = slugifyCategory(label);
+  if(!id){ alert('Please enter a valid category name.'); return; }
+  if(LIVE_CATEGORIES.some(function(c){ return c.id === id; })){ alert('That category already exists.'); return; }
+  const next = LIVE_CATEGORIES.concat([{ id: id, label: label, sort_order: LIVE_CATEGORIES.length }]);
+  const ok = await mistiData.saveData(mistiData.KEYS.categories, next);
+  if(ok) input.value = '';
+  else alert('Could not add the category. Please try again.');
+}
+window.addCategory = addCategory;
+
+async function deleteCategory(id){
+  if(LIVE_PRODUCTS.some(function(p){ return p.category === id; })){
+    alert('This category is still used by one or more products. Change their category first.');
+    return;
+  }
+  if(!confirm('Delete this category?')) return;
+  const next = LIVE_CATEGORIES.filter(function(c){ return c.id !== id; });
+  const ok = await mistiData.saveData(mistiData.KEYS.categories, next);
+  if(!ok) alert('Could not delete the category. Please try again.');
+}
+window.deleteCategory = deleteCategory;
 
 /* ---------- Product photo gallery (Photos field) ---------- */
 let PF_IMAGES = [];
@@ -1086,7 +1145,7 @@ function openProductModal(id){
     qs('#pf-id').value = '';
     qs('#pf-name').value = '';
     qs('#pf-tagline').value = '';
-    qs('#pf-category').value = 'custom-tshirts';
+    qs('#pf-category').value = LIVE_CATEGORIES[0] ? LIVE_CATEGORIES[0].id : '';
     qs('#pf-technique').value = 'embroidery';
     qs('#pf-price').value = '';
     qs('#pf-mrp').value = '';
@@ -2031,12 +2090,20 @@ async function initAdminData(){
     mistiData.loadData(mistiData.KEYS.products, mistiData.DEFAULT_PRODUCTS),
     mistiData.loadData(mistiData.KEYS.orders, mistiData.DEFAULT_ORDERS),
     mistiData.loadData(mistiData.KEYS.artisans, mistiData.DEFAULT_ARTISANS),
-    mistiData.loadData(mistiData.KEYS.founders, mistiData.DEFAULT_FOUNDERS)
+    mistiData.loadData(mistiData.KEYS.founders, mistiData.DEFAULT_FOUNDERS),
+    mistiData.loadData(mistiData.KEYS.categories, mistiData.DEFAULT_CATEGORIES)
   ]);
   mistiData.subscribe(mistiData.KEYS.products, function(products){
     LIVE_PRODUCTS = products;
     renderProductsTable();
     renderAnalytics();
+  });
+  mistiData.subscribe(mistiData.KEYS.categories, function(categories){
+    LIVE_CATEGORIES = categories.slice().sort(function(a, b){ return (a.sort_order || 0) - (b.sort_order || 0); });
+    mistiData.CATEGORY_LABELS = {};
+    LIVE_CATEGORIES.forEach(function(c){ mistiData.CATEGORY_LABELS[c.id] = c.label; });
+    renderCategoriesManager();
+    renderProductsTable();
   });
   mistiData.subscribe(mistiData.KEYS.orders, function(orders){
     LIVE_ORDERS = orders;
